@@ -3043,6 +3043,9 @@ VCMA9_config	:	unconfig
 omap3_igep0020a_config :	unconfig
 	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 igep0020a omap3 omap3
 
+omap3_igep0020b_config :	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 igep0020b omap3 omap3
+
 #########################################################################
 # ARM supplied Versatile development boards
 #########################################################################
