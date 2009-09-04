@@ -281,11 +281,12 @@ int dram_init(void)
 	 * where it can be started.  Early init code will init
 	 * memory on CS0.
 	 */
+#if 0
 	if ((sysinfo.mtype == DDR_COMBO) || (sysinfo.mtype == DDR_STACKED)) {
 		do_sdrc_init(CS1, NOT_EARLY);
 		make_cs1_contiguous();
 	}
-
+#endif
 	size0 = get_sdr_cs_size(CS0);
 	size1 = get_sdr_cs_size(CS1);
 
