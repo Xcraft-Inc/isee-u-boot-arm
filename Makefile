@@ -2866,6 +2866,9 @@ at91sam9g45ekes_config	:	unconfig
 pm9263_config	:	unconfig
 	@$(MKCONFIG) $(@:_config=) arm arm926ejs pm9263 ronetix at91
 
+roma0010a_config	:	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm926ejs roma0010a atmel at91
+
 ########################################################################
 ## ARM Integrator boards - see doc/README-integrator for more info.
 integratorap_config	\
