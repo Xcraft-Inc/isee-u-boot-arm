@@ -30,69 +30,79 @@ extern void onenand_release (struct mtd_info *mtd);
 
 /**
  * struct onenand_bufferram - OneNAND BufferRAM Data
- * @param blockpage	block & page address in BufferRAM
+ * @blockpage:		block & page address in BufferRAM
  */
 struct onenand_bufferram {
-	int blockpage;
+	int	blockpage;
 };
 
 /**
  * struct onenand_chip - OneNAND Private Flash Chip Data
- * @param base		[BOARDSPECIFIC] address to access OneNAND
- * @param chipsize	[INTERN] the size of one chip for multichip arrays
- * @param device_id	[INTERN] device ID
- * @param verstion_id	[INTERN] version ID
- * @param options	[BOARDSPECIFIC] various chip options. They can partly be set to inform onenand_scan about
- * @param erase_shift	[INTERN] number of address bits in a block
- * @param page_shift	[INTERN] number of address bits in a page
- * @param ppb_shift	[INTERN] number of address bits in a pages per block
- * @param page_mask	[INTERN] a page per block mask
- * @param writesize	[INTERN] a real page size
- * @param bufferam_index	[INTERN] BufferRAM index
- * @param bufferam	[INTERN] BufferRAM info
- * @param readw		[REPLACEABLE] hardware specific function for read short
- * @param writew	[REPLACEABLE] hardware specific function for write short
- * @param command	[REPLACEABLE] hardware specific function for writing commands to the chip
- * @param wait		[REPLACEABLE] hardware specific function for wait on ready
- * @param read_bufferram	[REPLACEABLE] hardware specific function for BufferRAM Area
- * @param write_bufferram	[REPLACEABLE] hardware specific function for BufferRAM Area
- * @param chip_lock	[INTERN] spinlock used to protect access to this structure and the chip
- * @param wq		[INTERN] wait queue to sleep on if a OneNAND operation is in progress
- * @param state		[INTERN] the current state of the OneNAND device
- * @param autooob	[REPLACEABLE] the default (auto)placement scheme
- * @param priv		[OPTIONAL] pointer to private chip date
+ * @base:		[BOARDSPECIFIC] address to access OneNAND
+ * @chipsize:		[INTERN] the size of one chip for multichip arrays
+ * @device_id:		[INTERN] device ID
+ * @density_mask:	chip density, used for DDP devices
+ * @verstion_id:	[INTERN] version ID
+ * @options:		[BOARDSPECIFIC] various chip options. They can
+ *			partly be set to inform onenand_scan about
+ * @erase_shift:	[INTERN] number of address bits in a block
+ * @page_shift:		[INTERN] number of address bits in a page
+ * @page_mask:		[INTERN] a page per block mask
+ * @writesize:		[INTERN] a real page size
+ * @bufferram_index:	[INTERN] BufferRAM index
+ * @bufferram:		[INTERN] BufferRAM info
+ * @readw:		[REPLACEABLE] hardware specific function for read short
+ * @writew:		[REPLACEABLE] hardware specific function for write short
+ * @command:		[REPLACEABLE] hardware specific function for writing
+ *			commands to the chip
+ * @wait:		[REPLACEABLE] hardware specific function for wait on ready
+ * @read_bufferram:	[REPLACEABLE] hardware specific function for BufferRAM Area
+ * @write_bufferram:	[REPLACEABLE] hardware specific function for BufferRAM Area
+ * @read_word:		[REPLACEABLE] hardware specific function for read
+ *			register of OneNAND
+ * @write_word:		[REPLACEABLE] hardware specific function for write
+ *			register of OneNAND
+ * @mmcontrol:		sync burst read function
+ * @block_markbad:	function to mark a block as bad
+ * @scan_bbt:		[REPLACEALBE] hardware specific function for scanning
+ *			Bad block Table
+ * @chip_lock:		[INTERN] spinlock used to protect access to this
+ *			structure and the chip
+ * @wq:			[INTERN] wait queue to sleep on if a OneNAND
+ *			operation is in progress
+ * @state:		[INTERN] the current state of the OneNAND device
+ * @page_buf:		[INTERN] page main data buffer
+ * @oob_buf:		[INTERN] page oob data buffer
+ * @subpagesize:	[INTERN] holds the subpagesize
+ * @ecclayout:		[REPLACEABLE] the default ecc placement scheme
+ * @bbm:		[REPLACEABLE] pointer to Bad Block Management
+ * @priv:		[OPTIONAL] pointer to private chip date
  */
 struct onenand_chip {
-	void __iomem *base;
-	unsigned int chipsize;
-	unsigned int device_id;
-	unsigned int version_id;
-	unsigned int density_mask;
-	unsigned int options;
+	void __iomem		*base;
+	unsigned int		chipsize;
+	unsigned int		device_id;
+	unsigned int		version_id;
+	unsigned int		density_mask;
+	unsigned int		options;
 
-	unsigned int erase_shift;
-	unsigned int page_shift;
-	unsigned int ppb_shift;	/* Pages per block shift */
-	unsigned int page_mask;
-	unsigned int writesize;
+	unsigned int		erase_shift;
+	unsigned int		page_shift;
+	unsigned int		page_mask;
+	unsigned int		writesize;
 
-	unsigned int bufferram_index;
-	struct onenand_bufferram bufferram[MAX_BUFFERRAM];
+	unsigned int		bufferram_index;
+	struct onenand_bufferram	bufferram[MAX_BUFFERRAM];
 
-	int (*command) (struct mtd_info *mtd, int cmd, loff_t address,
-			size_t len);
-	int (*wait) (struct mtd_info *mtd, int state);
-	int (*bbt_wait) (struct mtd_info *mtd, int state);
-	int (*read_bufferram) (struct mtd_info *mtd, loff_t addr, int area,
-			       unsigned char *buffer, int offset, size_t count);
-	int (*read_spareram) (struct mtd_info *mtd, loff_t addr, int area,
-			       unsigned char *buffer, int offset, size_t count);
-	int (*write_bufferram) (struct mtd_info *mtd, loff_t addr, int area,
-				const unsigned char *buffer, int offset,
-				size_t count);
-	unsigned short (*read_word) (void __iomem *addr);
-	void (*write_word) (unsigned short value, void __iomem *addr);
-	void (*mmcontrol) (struct mtd_info *mtd, int sync_read);
+	int (*command)(struct mtd_info *mtd, int cmd, loff_t address, size_t len);
+	int (*wait)(struct mtd_info *mtd, int state);
+	int (*read_bufferram)(struct mtd_info *mtd, int area,
+			unsigned char *buffer, int offset, size_t count);
+	int (*write_bufferram)(struct mtd_info *mtd, int area,
+			const unsigned char *buffer, int offset, size_t count);
+	unsigned short (*read_word)(void __iomem *addr);
+	void (*write_word)(unsigned short value, void __iomem *addr);
+	void (*mmcontrol)(struct mtd_info *mtd, int sync_read);
 	int (*block_markbad)(struct mtd_info *mtd, loff_t ofs);
 	int (*scan_bbt)(struct mtd_info *mtd);
 
@@ -106,13 +116,12 @@ struct onenand_chip {
 	unsigned char		*page_buf;
 	unsigned char		*oob_buf;
 
-	struct nand_oobinfo *autooob;
 	int			subpagesize;
 	struct nand_ecclayout	*ecclayout;
 
-	void *bbm;
+	void			*bbm;
 
-	void *priv;
+	void			*priv;
 };
 
 /*
@@ -125,10 +134,23 @@ struct onenand_chip {
 #define ONENAND_SET_BUFFERRAM0(this)		(this->bufferram_index = 0)
 #define ONENAND_SET_BUFFERRAM1(this)		(this->bufferram_index = 1)
 
+#define ONENAND_GET_SYS_CFG1(this)					\
+	(this->read_word(this->base + ONENAND_REG_SYS_CFG1))
+#define ONENAND_SET_SYS_CFG1(v, this)					\
+	(this->write_word(v, this->base + ONENAND_REG_SYS_CFG1))
+
 #define ONENAND_IS_DDP(this)						\
 	(this->device_id & ONENAND_DEVICE_IS_DDP)
 
+#ifdef CONFIG_MTD_ONENAND_2X_PROGRAM
+#define ONENAND_IS_2PLANE(this)						\
+	(this->options & ONENAND_HAS_2PLANE)
+#else
 #define ONENAND_IS_2PLANE(this)			(0)
+#endif
+
+/* Check byte access in OneNAND */
+#define ONENAND_CHECK_BYTE_ACCESS(addr)		(addr & 0x1)
 
 /*
  * Options bits
@@ -143,18 +165,19 @@ struct onenand_chip {
  * OneNAND Flash Manufacturer ID Codes
  */
 #define ONENAND_MFR_SAMSUNG	0xec
+#define ONENAND_MFR_NUMONYX	0x20
 
 /**
- * struct nand_manufacturers - NAND Flash Manufacturer ID Structure
- * @param name:		Manufacturer name
- * @param id:		manufacturer ID code of device.
+ * struct onenand_manufacturers - NAND Flash Manufacturer ID Structure
+ * @name:	Manufacturer name
+ * @id:		manufacturer ID code of device.
 */
 struct onenand_manufacturers {
-	int id;
-	char *name;
+        int id;
+        char *name;
 };
 
 int onenand_bbt_read_oob(struct mtd_info *mtd, loff_t from,
-			struct mtd_oob_ops *ops);
+			 struct mtd_oob_ops *ops);
 
-#endif				/* __LINUX_MTD_ONENAND_H */
+#endif	/* __LINUX_MTD_ONENAND_H */

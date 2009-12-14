@@ -84,7 +84,7 @@
 #define ONENAND_VERSION_PROCESS_SHIFT	(8)
 
 /*
- * Start Address 1 F100h (R/W)
+ * Start Address 1 F100h (R/W) & Start Address 2 F101h (R/W)
  */
 #define ONENAND_DDP_SHIFT		(15)
 #define ONENAND_DDP_CHIP0		(0)
@@ -122,6 +122,7 @@
 #define ONENAND_CMD_UNLOCK_ALL		(0x27)
 #define ONENAND_CMD_ERASE		(0x94)
 #define ONENAND_CMD_RESET		(0xF0)
+#define ONENAND_CMD_OTP_ACCESS		(0x65)
 #define ONENAND_CMD_READID		(0x90)
 
 /* NOTE: Those are not *REAL* commands */
@@ -151,6 +152,8 @@
 #define ONENAND_SYS_CFG1_INT		(1 << 6)
 #define ONENAND_SYS_CFG1_IOBE		(1 << 5)
 #define ONENAND_SYS_CFG1_RDY_CONF	(1 << 4)
+#define ONENAND_SYS_CFG1_HF		(1 << 2)
+#define ONENAND_SYS_CFG1_SYNC_WRITE	(1 << 1)
 
 /*
  * Controller Status Register F240h (R)
@@ -162,6 +165,8 @@
 #define ONENAND_CTRL_ERASE		(1 << 11)
 #define ONENAND_CTRL_ERROR		(1 << 10)
 #define ONENAND_CTRL_RSTB		(1 << 7)
+#define ONENAND_CTRL_OTP_L		(1 << 6)
+#define ONENAND_CTRL_OTP_BL		(1 << 5)
 
 /*
  * Interrupt Status Register F241h (R)
@@ -184,7 +189,13 @@
  * ECC Status Reigser FF00h (R)
  */
 #define ONENAND_ECC_1BIT		(1 << 0)
+#define ONENAND_ECC_1BIT_ALL		(0x5555)
 #define ONENAND_ECC_2BIT		(1 << 1)
 #define ONENAND_ECC_2BIT_ALL		(0xAAAA)
 
-#endif				/* __ONENAND_REG_H */
+/*
+ * One-Time Programmable (OTP)
+ */
+#define ONENAND_OTP_LOCK_OFFSET		(14)
+
+#endif	/* __ONENAND_REG_H */
