@@ -335,7 +335,7 @@ static int onenand_wait(struct mtd_info *mtd, int state)
 		int ecc = this->read_word(this->base + ONENAND_REG_ECC_STATUS);
 		if (ecc) {
 			if (ecc & ONENAND_ECC_2BIT_ALL) {
-				printk(KERN_ERR "onenand_wait: ECC error = 0x%04x\n", ecc);
+				/* printk(KERN_ERR "onenand_wait: ECC error = 0x%04x\n", ecc); */
 				mtd->ecc_stats.failed++;
 				return -EBADMSG;
 			} else if (ecc & ONENAND_ECC_1BIT_ALL) {
@@ -968,8 +968,10 @@ static int onenand_bbt_wait(struct mtd_info *mtd, int state)
 	if (interrupt & ONENAND_INT_READ) {
 		int ecc = this->read_word(this->base + ONENAND_REG_ECC_STATUS);
 		if (ecc & ONENAND_ECC_2BIT_ALL) {
+			/*
 			printk(KERN_INFO "onenand_bbt_wait: ecc error = 0x%04x"
 				", controller error 0x%04x\n", ecc, ctrl);
+			*/
 			return ONENAND_BBT_READ_ERROR;
 		}
 	} else {
