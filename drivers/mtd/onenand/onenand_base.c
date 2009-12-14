@@ -101,7 +101,7 @@ static void onenand_writew(unsigned short value, void __iomem * addr)
 
 /**
  * onenand_block_address - [DEFAULT] Get block address
- * @param device	the device id
+ * @param this		onenand chip data structure
  * @param block		the block
  * @return		translated block address if DDP, otherwise same
  *
@@ -118,7 +118,7 @@ static int onenand_block_address(struct onenand_chip *this, int block)
 
 /**
  * onenand_bufferram_address - [DEFAULT] Get bufferram address
- * @param device	the device id
+ * @param this		onenand chip data structure
  * @param block		the block
  * @return		set DBS value if DDP, otherwise 0
  *
@@ -181,7 +181,7 @@ static int onenand_buffer_address(int dataram1, int sectors, int count)
 
 /**
  * onenand_get_density - [DEFAULT] Get OneNAND density
- * @param dev_id        OneNAND device ID
+ * @param dev_id	OneNAND device ID
  *
  * Get OneNAND density from device ID
  */
@@ -201,14 +201,10 @@ static inline int onenand_get_density(int dev_id)
  * Send command to OneNAND device. This function is used for middle/large page
  * devices (1KB/2KB Bytes per page)
  */
-static int onenand_command(struct mtd_info *mtd, int cmd, loff_t addr,
-			   size_t len)
+static int onenand_command(struct mtd_info *mtd, int cmd, loff_t addr, size_t len)
 {
 	struct onenand_chip *this = mtd->priv;
-	int value, readcmd = 0;
-	int block, page;
-	/* Now we use page size operation */
-	int sectors = 4, count = 4;
+	int value, block, page;
 
 	/* Address translation */
 	switch (cmd) {
@@ -222,13 +218,23 @@ static int onenand_command(struct mtd_info *mtd, int cmd, loff_t addr,
 
 	case ONENAND_CMD_ERASE:
 	case ONENAND_CMD_BUFFERRAM:
-		block = (int)(addr >> this->erase_shift);
+	case ONENAND_CMD_OTP_ACCESS:
+		block = (int) (addr >> this->erase_shift);
 		page = -1;
 		break;
 
 	default:
-		block = (int)(addr >> this->erase_shift);
-		page = (int)(addr >> this->page_shift);
+		block = (int) (addr >> this->erase_shift);
+		page = (int) (addr >> this->page_shift);
+
+		if (ONENAND_IS_2PLANE(this)) {
+			/* Make the even block number */
+			block &= ~1;
+			/* Is it the odd plane? */
+			if (addr & this->writesize)
+				block++;
+			page >>= 1;
+		}
 		page &= this->page_mask;
 		break;
 	}
@@ -237,11 +243,13 @@ static int onenand_command(struct mtd_info *mtd, int cmd, loff_t addr,
 	if (cmd == ONENAND_CMD_BUFFERRAM) {
 		/* Select DataRAM for DDP */
 		value = onenand_bufferram_address(this, block);
-		this->write_word(value,
-				 this->base + ONENAND_REG_START_ADDRESS2);
-
-		/* Switch to the next data buffer */
-		ONENAND_SET_NEXT_BUFFERRAM(this);
+		this->write_word(value, this->base + ONENAND_REG_START_ADDRESS2);
+		if (ONENAND_IS_2PLANE(this))
+			/* It is always BufferRAM0 */
+			ONENAND_SET_BUFFERRAM0(this);
+		else
+			/* Switch to the next data buffer */
+			ONENAND_SET_NEXT_BUFFERRAM(this);
 
 		return 0;
 	}
@@ -249,34 +257,34 @@ static int onenand_command(struct mtd_info *mtd, int cmd, loff_t addr,
 	if (block != -1) {
 		/* Write 'DFS, FBA' of Flash */
 		value = onenand_block_address(this, block);
-		this->write_word(value,
-				 this->base + ONENAND_REG_START_ADDRESS1);
+		this->write_word(value, this->base + ONENAND_REG_START_ADDRESS1);
 
-		/* Write 'DFS, FBA' of Flash */
+		/* Select DataRAM for DDP */
 		value = onenand_bufferram_address(this, block);
-		this->write_word(value,
-				 this->base + ONENAND_REG_START_ADDRESS2);
+		this->write_word(value, this->base + ONENAND_REG_START_ADDRESS2);
 	}
 
 	if (page != -1) {
+		/* Now we use page size operation */
+		int sectors = 4, count = 4;
 		int dataram;
 
 		switch (cmd) {
 		case ONENAND_CMD_READ:
 		case ONENAND_CMD_READOOB:
 			dataram = ONENAND_SET_NEXT_BUFFERRAM(this);
-			readcmd = 1;
 			break;
 
 		default:
+			if (ONENAND_IS_2PLANE(this) && cmd == ONENAND_CMD_PROG)
+				cmd = ONENAND_CMD_2X_PROG;
 			dataram = ONENAND_CURRENT_BUFFERRAM(this);
 			break;
 		}
 
 		/* Write 'FPA, FSA' of Flash */
 		value = onenand_page_address(page, sectors);
-		this->write_word(value,
-				 this->base + ONENAND_REG_START_ADDRESS8);
+		this->write_word(value, this->base + ONENAND_REG_START_ADDRESS8);
 
 		/* Write 'BSA, BSC' of DataRAM */
 		value = onenand_buffer_address(dataram, sectors, count);
@@ -285,6 +293,7 @@ static int onenand_command(struct mtd_info *mtd, int cmd, loff_t addr,
 
 	/* Interrupt clear */
 	this->write_word(ONENAND_INT_CLEAR, this->base + ONENAND_REG_INTERRUPT);
+
 	/* Write command */
 	this->write_word(cmd, this->base + ONENAND_REG_COMMAND);
 
@@ -302,35 +311,50 @@ static int onenand_command(struct mtd_info *mtd, int cmd, loff_t addr,
  */
 static int onenand_wait(struct mtd_info *mtd, int state)
 {
-	struct onenand_chip *this = mtd->priv;
+	struct onenand_chip * this = mtd->priv;
 	unsigned int flags = ONENAND_INT_MASTER;
 	unsigned int interrupt = 0;
-	unsigned int ctrl, ecc;
+	unsigned int ctrl;
 
 	while (1) {
 		interrupt = this->read_word(this->base + ONENAND_REG_INTERRUPT);
 		if (interrupt & flags)
 			break;
 	}
+	/* To get correct interrupt status in timeout case */
+	interrupt = this->read_word(this->base + ONENAND_REG_INTERRUPT);
 
 	ctrl = this->read_word(this->base + ONENAND_REG_CTRL_STATUS);
 
-	if (ctrl & ONENAND_CTRL_ERROR) {
-		printk("onenand_wait: controller error = 0x%04x\n", ctrl);
-		if (ctrl & ONENAND_CTRL_LOCK)
-			printk("onenand_wait: it's locked error = 0x%04x\n",
-				ctrl);
-
+	/*
+	 * In the Spec. it checks the controller status first
+	 * However if you get the correct information in case of
+	 * power off recovery (POR) test, it should read ECC status first
+	 */
+	if (interrupt & ONENAND_INT_READ) {
+		int ecc = this->read_word(this->base + ONENAND_REG_ECC_STATUS);
+		if (ecc) {
+			if (ecc & ONENAND_ECC_2BIT_ALL) {
+				printk(KERN_ERR "onenand_wait: ECC error = 0x%04x\n", ecc);
+				mtd->ecc_stats.failed++;
+				return -EBADMSG;
+			} else if (ecc & ONENAND_ECC_1BIT_ALL) {
+				printk(KERN_INFO "onenand_wait: correctable ECC error = 0x%04x\n", ecc);
+				mtd->ecc_stats.corrected++;
+			}
+		}
+	} else if (state == FL_READING) {
+		printk(KERN_ERR "onenand_wait: read timeout! ctrl=0x%04x intr=0x%04x\n", ctrl, interrupt);
 		return -EIO;
 	}
 
-	if (interrupt & ONENAND_INT_READ) {
-		ecc = this->read_word(this->base + ONENAND_REG_ECC_STATUS);
-		if (ecc & ONENAND_ECC_2BIT_ALL) {
-			MTDDEBUG (MTD_DEBUG_LEVEL0,
-				  "onenand_wait: ECC error = 0x%04x\n", ecc);
-			return -EBADMSG;
-		}
+	/* If there's controller error, it's a real error */
+	if (ctrl & ONENAND_CTRL_ERROR) {
+		printk(KERN_ERR "onenand_wait: controller error = 0x%04x\n",
+			ctrl);
+		if (ctrl & ONENAND_CTRL_LOCK)
+			printk(KERN_ERR "onenand_wait: it's locked error.\n");
+		return -EIO;
 	}
 
 	return 0;
@@ -349,8 +373,9 @@ static inline int onenand_bufferram_offset(struct mtd_info *mtd, int area)
 	struct onenand_chip *this = mtd->priv;
 
 	if (ONENAND_CURRENT_BUFFERRAM(this)) {
+		/* Note: the 'this->writesize' is a real page size */
 		if (area == ONENAND_DATARAM)
-			return mtd->writesize;
+			return this->writesize;
 		if (area == ONENAND_SPARERAM)
 			return mtd->oobsize;
 	}
@@ -368,14 +393,14 @@ static inline int onenand_bufferram_offset(struct mtd_info *mtd, int area)
  *
  * Read the BufferRAM area
  */
-static int onenand_read_bufferram(struct mtd_info *mtd, loff_t addr, int area,
-				  unsigned char *buffer, int offset,
-				  size_t count)
+static int onenand_read_bufferram(struct mtd_info *mtd, int area,
+		unsigned char *buffer, int offset, size_t count)
 {
 	struct onenand_chip *this = mtd->priv;
 	void __iomem *bufferram;
 
 	bufferram = this->base + area;
+
 	bufferram += onenand_bufferram_offset(mtd, area);
 
 	memcpy_16(buffer, bufferram + offset, count);
@@ -393,14 +418,14 @@ static int onenand_read_bufferram(struct mtd_info *mtd, loff_t addr, int area,
  *
  * Read the BufferRAM area with Sync. Burst Mode
  */
-static int onenand_sync_read_bufferram(struct mtd_info *mtd, loff_t addr, int area,
-				       unsigned char *buffer, int offset,
-				       size_t count)
+static int onenand_sync_read_bufferram(struct mtd_info *mtd, int area,
+		unsigned char *buffer, int offset, size_t count)
 {
 	struct onenand_chip *this = mtd->priv;
 	void __iomem *bufferram;
 
 	bufferram = this->base + area;
+
 	bufferram += onenand_bufferram_offset(mtd, area);
 
 	this->mmcontrol(mtd, ONENAND_SYS_CFG1_SYNC_READ);
@@ -422,14 +447,14 @@ static int onenand_sync_read_bufferram(struct mtd_info *mtd, loff_t addr, int ar
  *
  * Write the BufferRAM area
  */
-static int onenand_write_bufferram(struct mtd_info *mtd, loff_t addr, int area,
-				   const unsigned char *buffer, int offset,
-				   size_t count)
+static int onenand_write_bufferram(struct mtd_info *mtd, int area,
+		const unsigned char *buffer, int offset, size_t count)
 {
 	struct onenand_chip *this = mtd->priv;
 	void __iomem *bufferram;
 
 	bufferram = this->base + area;
+
 	bufferram += onenand_bufferram_offset(mtd, area);
 
 	memcpy_16(bufferram + offset, buffer, count);
@@ -525,7 +550,7 @@ static int onenand_update_bufferram(struct mtd_info *mtd, loff_t addr,
 	if (ONENAND_IS_2PLANE(this))
 		blockpage = onenand_get_2x_blockpage(mtd, addr);
 	else
-		blockpage = (int)(addr >> this->page_shift);
+		blockpage = (int) (addr >> this->page_shift);
 
 	/* Invalidate another BufferRAM */
 	i = ONENAND_NEXT_BUFFERRAM(this);
@@ -560,7 +585,6 @@ static void onenand_invalidate_bufferram(struct mtd_info *mtd, loff_t addr,
 	/* Invalidate BufferRAM */
 	for (i = 0; i < MAX_BUFFERRAM; i++) {
 		loff_t buf_addr = this->bufferram[i].blockpage << this->page_shift;
-
 		if (buf_addr >= addr && buf_addr < end_addr)
 			this->bufferram[i].blockpage = -1;
 	}
@@ -615,7 +639,7 @@ static int onenand_transfer_auto_oob(struct mtd_info *mtd, uint8_t *buf,
 			readend += free->offset - lastgap;
 		lastgap = free->offset + free->length;
 	}
-	this->read_bufferram(mtd, 0, ONENAND_SPARERAM, oob_buf, 0, mtd->oobsize);
+	this->read_bufferram(mtd, ONENAND_SPARERAM, oob_buf, 0, mtd->oobsize);
 	free = this->ecclayout->oobfree;
 	for (i = 0; i < MTD_MAX_OOBFREE_ENTRIES && free->length; i++, free++) {
 		int free_end = free->offset + free->length;
@@ -674,13 +698,13 @@ static int onenand_read_ops_nolock(struct mtd_info *mtd, loff_t from,
 
 	/* Read-while-load method */
 
-	/* Do first load to bufferRAM */
-	if (read < len) {
-		if (!onenand_check_bufferram(mtd, from)) {
-			this->main_buf = buf;
+ 	/* Do first load to bufferRAM */
+ 	if (read < len) {
+ 		if (!onenand_check_bufferram(mtd, from)) {
+			/*printk("\n*** Do first load to bufferRAM\n");*/
 			this->command(mtd, ONENAND_CMD_READ, from, writesize);
-			ret = this->wait(mtd, FL_READING);
-			onenand_update_bufferram(mtd, from, !ret);
+ 			ret = this->wait(mtd, FL_READING);
+ 			onenand_update_bufferram(mtd, from, !ret);
 			if (ret == -EBADMSG)
 				ret = 0;
 		}
@@ -691,28 +715,27 @@ static int onenand_read_ops_nolock(struct mtd_info *mtd, loff_t from,
 	if (column + thislen > writesize)
 		thislen = writesize - column;
 
-	while (!ret) {
-		/* If there is more to load then start next load */
-		from += thislen;
-		if (read + thislen < len) {
-			this->main_buf = buf + thislen;
+ 	while (!ret) {
+ 		/* If there is more to load then start next load */
+ 		from += thislen;
+ 		if (read + thislen < len) {
 			this->command(mtd, ONENAND_CMD_READ, from, writesize);
-			/*
-			 * Chip boundary handling in DDP
-			 * Now we issued chip 1 read and pointed chip 1
-			 * bufferam so we have to point chip 0 bufferam.
-			 */
-			if (ONENAND_IS_DDP(this) &&
-					unlikely(from == (this->chipsize >> 1))) {
-				this->write_word(ONENAND_DDP_CHIP0, this->base + ONENAND_REG_START_ADDRESS2);
-				boundary = 1;
-			} else
-				boundary = 0;
-			ONENAND_SET_PREV_BUFFERRAM(this);
-		}
+ 			/*
+ 			 * Chip boundary handling in DDP
+ 			 * Now we issued chip 1 read and pointed chip 1
+ 			 * bufferam so we have to point chip 0 bufferam.
+ 			 */
+ 			if (ONENAND_IS_DDP(this) &&
+ 			    unlikely(from == (this->chipsize >> 1))) {
+ 				this->write_word(ONENAND_DDP_CHIP0, this->base + ONENAND_REG_START_ADDRESS2);
+ 				boundary = 1;
+ 			} else
+ 				boundary = 0;
 
-		/* While load is going, read from last bufferRAM */
-		this->read_bufferram(mtd, from - thislen, ONENAND_DATARAM, buf, column, thislen);
+ 			ONENAND_SET_PREV_BUFFERRAM(this);
+ 		}
+ 		/* While load is going, read from last bufferRAM */
+ 		this->read_bufferram(mtd, ONENAND_DATARAM, buf, column, thislen);
 
 		/* Read oob area if needed */
 		if (oobbuf) {
@@ -722,7 +745,7 @@ static int onenand_read_ops_nolock(struct mtd_info *mtd, loff_t from,
 			if (ops->mode == MTD_OOB_AUTO)
 				onenand_transfer_auto_oob(mtd, oobbuf, oobcolumn, thisooblen);
 			else
-				this->read_bufferram(mtd, 0, ONENAND_SPARERAM, oobbuf, oobcolumn, thisooblen);
+				this->read_bufferram(mtd, ONENAND_SPARERAM, oobbuf, oobcolumn, thisooblen);
 			oobread += thisooblen;
 			oobbuf += thisooblen;
 			oobcolumn = 0;
@@ -735,6 +758,7 @@ static int onenand_read_ops_nolock(struct mtd_info *mtd, loff_t from,
 		/* Set up for next read from bufferRAM */
 		if (unlikely(boundary))
 			this->write_word(ONENAND_DDP_CHIP1, this->base + ONENAND_REG_START_ADDRESS2);
+
 		ONENAND_SET_NEXT_BUFFERRAM(this);
 		buf += thislen;
 		thislen = min_t(int, writesize, len - read);
@@ -816,7 +840,6 @@ static int onenand_read_oob_nolock(struct mtd_info *mtd, loff_t from,
 		thislen = oobsize - column;
 		thislen = min_t(int, thislen, len);
 
-		this->spare_buf = buf;
 		this->command(mtd, ONENAND_CMD_READOOB, from, mtd->oobsize);
 
 		onenand_update_bufferram(mtd, from, 0);
@@ -830,7 +853,7 @@ static int onenand_read_oob_nolock(struct mtd_info *mtd, loff_t from,
 		if (mode == MTD_OOB_AUTO)
 			onenand_transfer_auto_oob(mtd, buf, column, thislen);
 		else
-			this->read_bufferram(mtd, 0, ONENAND_SPARERAM, buf, column, thislen);
+			this->read_bufferram(mtd, ONENAND_SPARERAM, buf, column, thislen);
 
 		read += thislen;
 
@@ -859,7 +882,7 @@ static int onenand_read_oob_nolock(struct mtd_info *mtd, loff_t from,
 }
 
 /**
- * onenand_read - [MTD Interface] MTD compability function for onenand_read_ecc
+ * onenand_read - [MTD Interface] Read data from flash
  * @param mtd		MTD device structure
  * @param from		offset to read from
  * @param len		number of bytes to read
@@ -879,9 +902,9 @@ int onenand_read(struct mtd_info *mtd, loff_t from, size_t len,
 	};
 	int ret;
 
-	onenand_get_device(mtd, FL_READING);
+	/* onenand_get_device(mtd, FL_READING); */
 	ret = onenand_read_ops_nolock(mtd, from, &ops);
-	onenand_release_device(mtd);
+	/* onenand_release_device(mtd); */
 
 	*retlen = ops.retlen;
 	return ret;
@@ -910,12 +933,12 @@ int onenand_read_oob(struct mtd_info *mtd, loff_t from,
 		return -EINVAL;
 	}
 
-	onenand_get_device(mtd, FL_READING);
+	/* onenand_get_device(mtd, FL_READING); */
 	if (ops->datbuf)
 		ret = onenand_read_ops_nolock(mtd, from, ops);
 	else
 		ret = onenand_read_oob_nolock(mtd, from, ops);
-	onenand_release_device(mtd);
+	/* onenand_release_device(mtd); */
 
 	return ret;
 }
@@ -930,33 +953,35 @@ int onenand_read_oob(struct mtd_info *mtd, loff_t from,
 static int onenand_bbt_wait(struct mtd_info *mtd, int state)
 {
 	struct onenand_chip *this = mtd->priv;
-	unsigned int flags = ONENAND_INT_MASTER;
 	unsigned int interrupt;
 	unsigned int ctrl;
 
 	while (1) {
 		interrupt = this->read_word(this->base + ONENAND_REG_INTERRUPT);
-		if (interrupt & flags)
+		if (interrupt & ONENAND_INT_MASTER)
 			break;
 	}
-
 	/* To get correct interrupt status in timeout case */
 	interrupt = this->read_word(this->base + ONENAND_REG_INTERRUPT);
 	ctrl = this->read_word(this->base + ONENAND_REG_CTRL_STATUS);
 
 	if (interrupt & ONENAND_INT_READ) {
 		int ecc = this->read_word(this->base + ONENAND_REG_ECC_STATUS);
-		if (ecc & ONENAND_ECC_2BIT_ALL)
+		if (ecc & ONENAND_ECC_2BIT_ALL) {
+			printk(KERN_INFO "onenand_bbt_wait: ecc error = 0x%04x"
+				", controller error 0x%04x\n", ecc, ctrl);
 			return ONENAND_BBT_READ_ERROR;
+		}
 	} else {
 		printk(KERN_ERR "onenand_bbt_wait: read timeout!"
-				"ctrl=0x%04x intr=0x%04x\n", ctrl, interrupt);
+			"ctrl=0x%04x intr=0x%04x\n", ctrl, interrupt);
 		return ONENAND_BBT_READ_FATAL_ERROR;
 	}
 
 	/* Initial bad block case: 0x2400 or 0x0400 */
 	if (ctrl & ONENAND_CTRL_ERROR) {
-		printk(KERN_DEBUG "onenand_bbt_wait: controller error = 0x%04x\n", ctrl);
+		printk(KERN_DEBUG "onenand_bbt_wait: "
+			"controller error = 0x%04x\n", ctrl);
 		return ONENAND_BBT_READ_ERROR;
 	}
 
@@ -992,7 +1017,7 @@ int onenand_bbt_read_oob(struct mtd_info *mtd, loff_t from,
 	}
 
 	/* Grab the lock and see if the device is available */
-	onenand_get_device(mtd, FL_READING);
+	/* onenand_get_device(mtd, FL_READING); */
 
 	column = from & (mtd->oobsize - 1);
 
@@ -1001,16 +1026,15 @@ int onenand_bbt_read_oob(struct mtd_info *mtd, loff_t from,
 		thislen = mtd->oobsize - column;
 		thislen = min_t(int, thislen, len);
 
-		this->spare_buf = buf;
 		this->command(mtd, ONENAND_CMD_READOOB, from, mtd->oobsize);
 
 		onenand_update_bufferram(mtd, from, 0);
 
-		ret = this->bbt_wait(mtd, FL_READING);
+		ret = onenand_bbt_wait(mtd, FL_READING);
 		if (ret)
 			break;
 
-		this->read_bufferram(mtd, 0, ONENAND_SPARERAM, buf, column, thislen);
+		this->read_bufferram(mtd, ONENAND_SPARERAM, buf, column, thislen);
 		read += thislen;
 		if (read == len)
 			break;
@@ -1026,12 +1050,11 @@ int onenand_bbt_read_oob(struct mtd_info *mtd, loff_t from,
 	}
 
 	/* Deselect and wake up anyone waiting on the device */
-	onenand_release_device(mtd);
+	/* onenand_release_device(mtd); */
 
 	ops->oobretlen = read;
 	return ret;
 }
-
 
 #ifdef CONFIG_MTD_ONENAND_VERIFY_WRITE
 /**
@@ -1052,7 +1075,7 @@ static int onenand_verify_oob(struct mtd_info *mtd, const u_char *buf, loff_t to
 	if (status)
 		return status;
 
-	this->read_bufferram(mtd, 0, ONENAND_SPARERAM, oob_buf, 0, mtd->oobsize);
+	this->read_bufferram(mtd, ONENAND_SPARERAM, oob_buf, 0, mtd->oobsize);
 	for (i = 0; i < mtd->oobsize; i++)
 		if (buf[i] != 0xFF && buf[i] != oob_buf[i])
 			return -EBADMSG;
@@ -1216,13 +1239,13 @@ static int onenand_write_ops_nolock(struct mtd_info *mtd, loff_t to,
 			wbuf = this->page_buf;
 		}
 
-		this->write_bufferram(mtd, to, ONENAND_DATARAM, wbuf, 0, mtd->writesize);
+		this->write_bufferram(mtd, ONENAND_DATARAM, wbuf, 0, mtd->writesize);
 
 		if (oob) {
 			oobbuf = this->oob_buf;
 
 			/* We send data to spare ram with oobsize
-			 *                          * to prevent byte access */
+			 * to prevent byte access */
 			memset(oobbuf, 0xff, mtd->oobsize);
 			if (ops->mode == MTD_OOB_AUTO)
 				onenand_fill_auto_oob(mtd, oobbuf, oob, oobcolumn, thisooblen);
@@ -1235,7 +1258,7 @@ static int onenand_write_ops_nolock(struct mtd_info *mtd, loff_t to,
 		} else
 			oobbuf = (u_char *) ffchars;
 
-		this->write_bufferram(mtd, 0, ONENAND_SPARERAM, oobbuf, 0, mtd->oobsize);
+		this->write_bufferram(mtd, ONENAND_SPARERAM, oobbuf, 0, mtd->oobsize);
 
 		this->command(mtd, ONENAND_CMD_PROG, to, mtd->writesize);
 
@@ -1346,7 +1369,7 @@ static int onenand_write_oob_nolock(struct mtd_info *mtd, loff_t to,
 			onenand_fill_auto_oob(mtd, oobbuf, buf, column, thislen);
 		else
 			memcpy(oobbuf + column, buf, thislen);
-		this->write_bufferram(mtd, 0, ONENAND_SPARERAM, oobbuf, 0, mtd->oobsize);
+		this->write_bufferram(mtd, ONENAND_SPARERAM, oobbuf, 0, mtd->oobsize);
 
 		this->command(mtd, ONENAND_CMD_PROGOOB, to, mtd->oobsize);
 
@@ -1383,7 +1406,7 @@ static int onenand_write_oob_nolock(struct mtd_info *mtd, loff_t to,
 }
 
 /**
- * onenand_write - [MTD Interface] compability function for onenand_write_ecc
+ * onenand_write - [MTD Interface] write buffer to FLASH
  * @param mtd		MTD device structure
  * @param to		offset to write to
  * @param len		number of bytes to write
@@ -1403,9 +1426,9 @@ int onenand_write(struct mtd_info *mtd, loff_t to, size_t len,
 	};
 	int ret;
 
-	onenand_get_device(mtd, FL_WRITING);
+	/* onenand_get_device(mtd, FL_WRITING); */
 	ret = onenand_write_ops_nolock(mtd, to, &ops);
-	onenand_release_device(mtd);
+	/* onenand_release_device(mtd); */
 
 	*retlen = ops.retlen;
 	return ret;
@@ -1434,15 +1457,14 @@ int onenand_write_oob(struct mtd_info *mtd, loff_t to,
 		return -EINVAL;
 	}
 
-	onenand_get_device(mtd, FL_WRITING);
+	/* onenand_get_device(mtd, FL_WRITING); */
 	if (ops->datbuf)
 		ret = onenand_write_ops_nolock(mtd, to, ops);
 	else
 		ret = onenand_write_oob_nolock(mtd, to, ops);
-	onenand_release_device(mtd);
+	/* onenand_release_device(mtd); */
 
 	return ret;
-
 }
 
 /**
@@ -1462,7 +1484,6 @@ static int onenand_block_isbad_nolock(struct mtd_info *mtd, loff_t ofs, int allo
 	/* Return info from the table */
 	return bbm->isbad_bbt(mtd, ofs, allowbbt);
 }
-
 
 /**
  * onenand_erase - [MTD Interface] erase block(s)
@@ -1487,29 +1508,26 @@ int onenand_erase(struct mtd_info *mtd, struct erase_info *instr)
 
 	/* Start address must align on block boundary */
 	if (unlikely(instr->addr & (block_size - 1))) {
-		MTDDEBUG (MTD_DEBUG_LEVEL0,
-			 "onenand_erase: Unaligned address\n");
+		printk(KERN_ERR "onenand_erase: Unaligned address\n");
 		return -EINVAL;
 	}
 
 	/* Length must align on block boundary */
 	if (unlikely(instr->len & (block_size - 1))) {
-		MTDDEBUG (MTD_DEBUG_LEVEL0,
-			 "onenand_erase: Length not block aligned\n");
+		printk(KERN_ERR "onenand_erase: Length not block aligned\n");
 		return -EINVAL;
 	}
 
 	/* Do not allow erase past end of device */
 	if (unlikely((instr->len + instr->addr) > mtd->size)) {
-		MTDDEBUG (MTD_DEBUG_LEVEL0,
-			 "onenand_erase: Erase past end of device\n");
+		printk(KERN_ERR "onenand_erase: Erase past end of device\n");
 		return -EINVAL;
 	}
 
-	instr->fail_addr = 0xffffffff;
+	instr->fail_addr = MTD_FAIL_ADDR_UNKNOWN;
 
 	/* Grab the lock and see if the device is available */
-	onenand_get_device(mtd, FL_ERASING);
+	/* onenand_get_device(mtd, FL_ERASING); */
 
 	/* Loop throught the pages */
 	len = instr->len;
@@ -1520,10 +1538,8 @@ int onenand_erase(struct mtd_info *mtd, struct erase_info *instr)
 	while (len) {
 
 		/* Check if we have a bad block, we do not erase bad blocks */
-		if (instr->priv == 0 && onenand_block_isbad_nolock(mtd, addr, 0)) {
-			printk(KERN_WARNING "onenand_erase: attempt to erase"
-				" a bad block at addr 0x%08x\n",
-				(unsigned int) addr);
+		if (onenand_block_isbad_nolock(mtd, addr, 0)) {
+			printk (KERN_WARNING "onenand_erase: attempt to erase a bad block at addr 0x%08x\n", (unsigned int) addr);
 			instr->state = MTD_ERASE_FAILED;
 			goto erase_exit;
 		}
@@ -1535,23 +1551,9 @@ int onenand_erase(struct mtd_info *mtd, struct erase_info *instr)
 		ret = this->wait(mtd, FL_ERASING);
 		/* Check, if it is write protected */
 		if (ret) {
-			if (ret == -EPERM)
-				MTDDEBUG (MTD_DEBUG_LEVEL0, "onenand_erase: "
-					  "Device is write protected!!!\n");
-			else
-				MTDDEBUG (MTD_DEBUG_LEVEL0, "onenand_erase: "
-					  "Failed erase, block %d\n",
-					  (unsigned)(addr >> this->erase_shift));
-			if (ret == -EPERM)
-				printk("onenand_erase: "
-					  "Device is write protected!!!\n");
-			else
-				printk("onenand_erase: "
-					  "Failed erase, block %d\n",
-					  (unsigned)(addr >> this->erase_shift));
+			printk(KERN_ERR "onenand_erase: Failed erase, block %d\n", (unsigned) (addr >> this->erase_shift));
 			instr->state = MTD_ERASE_FAILED;
 			instr->fail_addr = addr;
-
 			goto erase_exit;
 		}
 
@@ -1564,12 +1566,13 @@ int onenand_erase(struct mtd_info *mtd, struct erase_info *instr)
 erase_exit:
 
 	ret = instr->state == MTD_ERASE_DONE ? 0 : -EIO;
+
+	/* Deselect and wake up anyone waiting on the device */
+	/* onenand_release_device(mtd); */
+
 	/* Do call back function */
 	if (!ret)
 		mtd_erase_callback(instr);
-
-	/* Deselect and wake up anyone waiting on the device */
-	onenand_release_device(mtd);
 
 	return ret;
 }
@@ -1585,10 +1588,10 @@ void onenand_sync(struct mtd_info *mtd)
 	MTDDEBUG (MTD_DEBUG_LEVEL3, "onenand_sync: called\n");
 
 	/* Grab the lock and see if the device is available */
-	onenand_get_device(mtd, FL_SYNCING);
+	/* onenand_get_device(mtd, FL_SYNCING); */
 
 	/* Release it and go back */
-	onenand_release_device(mtd);
+	/* onenand_release_device(mtd); */
 }
 
 /**
@@ -1606,9 +1609,9 @@ int onenand_block_isbad(struct mtd_info *mtd, loff_t ofs)
 	if (ofs > mtd->size)
 		return -EINVAL;
 
-	onenand_get_device(mtd, FL_READING);
-	ret = onenand_block_isbad_nolock(mtd,ofs, 0);
-	onenand_release_device(mtd);
+	/* onenand_get_device(mtd, FL_READING); */
+	ret = onenand_block_isbad_nolock(mtd, ofs, 0);
+	/* onenand_release_device(mtd); */
 	return ret;
 }
 
@@ -1663,7 +1666,9 @@ int onenand_block_markbad(struct mtd_info *mtd, loff_t ofs)
 		return ret;
 	}
 
+	/* onenand_get_device(mtd, FL_WRITING); */
 	ret = this->block_markbad(mtd, ofs);
+	/* onenand_release_device(mtd); */
 	return ret;
 }
 
@@ -1693,25 +1698,23 @@ static int onenand_do_lock_cmd(struct mtd_info *mtd, loff_t ofs, size_t len, int
 	/* Continuous lock scheme */
 	if (this->options & ONENAND_HAS_CONT_LOCK) {
 		/* Set start block address */
-		this->write_word(start,
-				 this->base + ONENAND_REG_START_BLOCK_ADDRESS);
+		this->write_word(start, this->base + ONENAND_REG_START_BLOCK_ADDRESS);
 		/* Set end block address */
-		this->write_word(end - 1,
-				 this->base + ONENAND_REG_END_BLOCK_ADDRESS);
-		/* Write unlock command */
+		this->write_word(start + end - 1, this->base + ONENAND_REG_END_BLOCK_ADDRESS);
+		/* Write lock command */
 		this->command(mtd, cmd, 0, 0);
 
 		/* There's no return value */
-		this->wait(mtd, FL_UNLOCKING);
+		this->wait(mtd, FL_LOCKING);
 
 		/* Sanity check */
 		while (this->read_word(this->base + ONENAND_REG_CTRL_STATUS)
-		       & ONENAND_CTRL_ONGO)
+		    & ONENAND_CTRL_ONGO)
 			continue;
 
 		/* Check lock status */
 		status = this->read_word(this->base + ONENAND_REG_WP_STATUS);
-		if (!(status & ONENAND_WP_US))
+		if (!(status & wp_status_mask))
 			printk(KERN_ERR "wp status = 0x%x\n", status);
 
 		return 0;
@@ -1725,26 +1728,23 @@ static int onenand_do_lock_cmd(struct mtd_info *mtd, loff_t ofs, size_t len, int
 		/* Select DataRAM for DDP */
 		value = onenand_bufferram_address(this, block);
 		this->write_word(value, this->base + ONENAND_REG_START_ADDRESS2);
-
 		/* Set start block address */
-		this->write_word(block,
-				 this->base + ONENAND_REG_START_BLOCK_ADDRESS);
-		/* Write unlock command */
-		this->command(mtd, ONENAND_CMD_UNLOCK, 0, 0);
+		this->write_word(block, this->base + ONENAND_REG_START_BLOCK_ADDRESS);
+		/* Write lock command */
+		this->command(mtd, cmd, 0, 0);
 
 		/* There's no return value */
-		this->wait(mtd, FL_UNLOCKING);
+		this->wait(mtd, FL_LOCKING);
 
 		/* Sanity check */
 		while (this->read_word(this->base + ONENAND_REG_CTRL_STATUS)
-		       & ONENAND_CTRL_ONGO)
+		    & ONENAND_CTRL_ONGO)
 			continue;
 
 		/* Check lock status */
 		status = this->read_word(this->base + ONENAND_REG_WP_STATUS);
-		if (!(status & ONENAND_WP_US))
-			printk(KERN_ERR "block = %d, wp status = 0x%x\n",
-			       block, status);
+		if (!(status & wp_status_mask))
+			printk(KERN_ERR "block = %d, wp status = 0x%x\n", block, status);
 	}
 
 	return 0;
@@ -1763,9 +1763,9 @@ static int onenand_lock(struct mtd_info *mtd, loff_t ofs, size_t len)
 {
 	int ret;
 
-	onenand_get_device(mtd, FL_LOCKING);
+	/* onenand_get_device(mtd, FL_LOCKING); */
 	ret = onenand_do_lock_cmd(mtd, ofs, len, ONENAND_CMD_LOCK);
-	onenand_release_device(mtd);
+	/* onenand_release_device(mtd); */
 	return ret;
 }
 
@@ -1781,9 +1781,9 @@ static int onenand_unlock(struct mtd_info *mtd, loff_t ofs, size_t len)
 {
 	int ret;
 
-	onenand_get_device(mtd, FL_LOCKING);
+	/* onenand_get_device(mtd, FL_LOCKING); */
 	ret = onenand_do_lock_cmd(mtd, ofs, len, ONENAND_CMD_UNLOCK);
-	onenand_release_device(mtd);
+	/* onenand_release_device(mtd); */
 	return ret;
 }
 #endif
@@ -1846,8 +1846,6 @@ static void onenand_unlock_all(struct mtd_info *mtd)
 		while (this->read_word(this->base + ONENAND_REG_CTRL_STATUS)
 				& ONENAND_CTRL_ONGO)
 			continue;
-
-		return;
 
 		/* Check lock status */
 		if (onenand_check_lock_status(this))
@@ -1942,7 +1940,8 @@ char *onenand_print_device_info(int device, int version)
 }
 
 static const struct onenand_manufacturers onenand_manuf_ids[] = {
-	{ONENAND_MFR_SAMSUNG, "Samsung"},
+        {ONENAND_MFR_SAMSUNG, "Samsung"},
+	{ONENAND_MFR_NUMONYX, "Numonyx"},
 };
 
 /**
@@ -1970,7 +1969,7 @@ static int onenand_check_maf(int manuf)
 	printk(KERN_DEBUG "OneNAND Manufacturer: %s (0x%0x)\n", name, manuf);
 #endif
 
-	return i == size;
+	return (i == size);
 }
 
 /**
@@ -1990,7 +1989,7 @@ static int onenand_probe(struct mtd_info *mtd)
 	/* Save system configuration 1 */
 	syscfg = this->read_word(this->base + ONENAND_REG_SYS_CFG1);
 	/* Clear Sync. Burst Read mode to read BootRAM */
-	this->write_word((syscfg & ~ONENAND_SYS_CFG1_SYNC_READ), this->base + ONENAND_REG_SYS_CFG1);
+	this->write_word((syscfg & ~ONENAND_SYS_CFG1_SYNC_READ & ~ONENAND_SYS_CFG1_SYNC_WRITE), this->base + ONENAND_REG_SYS_CFG1);
 
 	/* Send the command for reading device ID from BootRAM */
 	this->write_word(ONENAND_CMD_READID, this->base + ONENAND_BOOTRAM);
@@ -2001,7 +2000,6 @@ static int onenand_probe(struct mtd_info *mtd)
 
 	/* Reset OneNAND to read default register values */
 	this->write_word(ONENAND_CMD_RESET, this->base + ONENAND_BOOTRAM);
-
 	/* Wait reset */
 	this->wait(mtd, FL_RESETING);
 
@@ -2042,16 +2040,14 @@ static int onenand_probe(struct mtd_info *mtd)
 
 	/* OneNAND page size & block size */
 	/* The data buffer size is equal to page size */
-	mtd->writesize =
-	    this->read_word(this->base + ONENAND_REG_DATA_BUFFER_SIZE);
+	mtd->writesize = this->read_word(this->base + ONENAND_REG_DATA_BUFFER_SIZE);
 	mtd->oobsize = mtd->writesize >> 5;
-	/* Pagers per block is always 64 in OneNAND */
+	/* Pages per a block are always 64 in OneNAND */
 	mtd->erasesize = mtd->writesize << 6;
 
 	this->erase_shift = ffs(mtd->erasesize) - 1;
 	this->page_shift = ffs(mtd->writesize) - 1;
-	this->ppb_shift = (this->erase_shift - this->page_shift);
-	this->page_mask = (mtd->erasesize / mtd->writesize) - 1;
+	this->page_mask = (1 << (this->erase_shift - this->page_shift)) - 1;
 	/* It's real page size */
 	this->writesize = mtd->writesize;
 
@@ -2071,6 +2067,17 @@ static int onenand_probe(struct mtd_info *mtd)
 	mtd->sync = onenand_sync;
 	mtd->block_isbad = onenand_block_isbad;
 	mtd->block_markbad = onenand_block_markbad;
+
+	/*
+	 * We emulate the 4KiB page and 256KiB erase block size
+	 * But oobsize is still 64 bytes.
+	 * It is only valid if you turn on 2X program support,
+	 * Otherwise it will be ignored by compiler.
+	 */
+	if (ONENAND_IS_2PLANE(this)) {
+		mtd->writesize <<= 1;
+		mtd->erasesize <<= 1;
+	}
 
 	return 0;
 }
@@ -2099,11 +2106,16 @@ int onenand_scan(struct mtd_info *mtd, int maxchips)
 		this->command = onenand_command;
 	if (!this->wait)
 		this->wait = onenand_wait;
+/*
 	if (!this->bbt_wait)
 		this->bbt_wait = onenand_bbt_wait;
-
+*/
 	if (!this->read_bufferram)
 		this->read_bufferram = onenand_read_bufferram;
+/*
+	if (!this->read_spareram)
+		this->read_spareram = onenand_read_bufferram;
+*/
 	if (!this->write_bufferram)
 		this->write_bufferram = onenand_write_bufferram;
 
