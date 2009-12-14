@@ -37,6 +37,16 @@ extern struct onenand_chip onenand_chip;
 /* References to names in env_common.c */
 extern uchar default_environment[];
 
+/*
+ * User can give many blocks to environment variable partition
+ * through CONFIG_ENV_SIZE macro.
+ * The variables are written to first block in the partition. If this block
+ * goes bad, the successive block is used to store environment variables.
+ *
+ */
+
+#define ONENAND_ENV_END   (CONFIG_ENV_ADDR + CONFIG_ENV_SIZE)
+
 char *env_name_spec = "OneNAND";
 
 #define ONENAND_MAX_ENV_SIZE	4096
@@ -60,22 +70,32 @@ uchar env_get_char_spec(int index)
 void env_relocate_spec(void)
 {
 	struct mtd_info *mtd = &onenand_mtd;
-	loff_t env_addr;
-	int use_default = 0;
+	unsigned int env_addr;
+	int use_default = 1;
 	size_t retlen;
+	int blocksize = mtd->erasesize;
 
 	env_addr = CONFIG_ENV_ADDR;
 
-	/* Check OneNAND exist */
-	if (mtd->writesize)
+	/* Find environment block. */
+	while (mtd->writesize && (env_addr < ONENAND_ENV_END)) {
+		if (mtd->block_isbad(mtd, env_addr)) {
+			printf("OneNAND: Skip bad block at 0x%08x\n", env_addr);
+			env_addr += blocksize;
+			continue;
+		}
+
 		/* Ignore read fail */
 		mtd->read(mtd, env_addr, ONENAND_MAX_ENV_SIZE,
 			     &retlen, (u_char *) env_ptr);
-	else
-		mtd->writesize = MAX_ONENAND_PAGESIZE;
 
-	if (crc32(0, env_ptr->data, ONENAND_ENV_SIZE(mtd)) != env_ptr->crc)
-		use_default = 1;
+		if (crc32(0, env_ptr->data, ONENAND_ENV_SIZE(mtd)) == env_ptr->crc) {
+			printf("OneNAND: Read environment from 0x%08x\n", env_addr);
+			use_default = 0;
+			break;
+		}
+		env_addr += blocksize;
+	}
 
 	if (use_default) {
 		memcpy(env_ptr->data, default_environment,
@@ -96,23 +116,38 @@ int saveenv(void)
 		.callback	= NULL,
 	};
 	size_t retlen;
+	int blocksize = mtd->erasesize;
 
-	instr.len = CONFIG_ENV_SIZE;
-	instr.addr = env_addr;
-	instr.mtd = mtd;
-	if (mtd->erase(mtd, &instr)) {
-		printf("OneNAND: erase failed at 0x%08llx\n", env_addr);
-		return 1;
+	/* Skip any bad blocks */
+	while (mtd->block_isbad(mtd, env_addr)) {
+		printf("OneNAND: Skip bad block at 0x%08x\n", env_addr);
+		env_addr += blocksize;
 	}
 
 	/* update crc */
 	env_ptr->crc = crc32(0, env_ptr->data, ONENAND_ENV_SIZE(mtd));
 
+	if (env_addr >= ONENAND_ENV_END) {
+		printf("OneNAND: Saving environment failed\n");
+		return 1;
+	}
+
+	instr.len = blocksize;
+	instr.addr = env_addr;
+	instr.mtd = mtd;
+	if (mtd->erase(mtd, &instr)) {
+		printf("OneNAND: erase failed at 0x%08x\n", env_addr);
+		return 1;
+	}
+
+	/* Write the environment variables*/
 	if (mtd->write(mtd, env_addr, ONENAND_MAX_ENV_SIZE, &retlen,
 	     (u_char *) env_ptr)) {
-		printf("OneNAND: write failed at 0x%llx\n", instr.addr);
+		printf("OneNAND: write failed at 0x%08x\n", instr.addr);
 		return 2;
 	}
+
+	printf("OneNAND: Saved environment to 0x%08x\n", env_addr);
 
 	return 0;
 }
