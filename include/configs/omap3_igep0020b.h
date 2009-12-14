@@ -21,8 +21,9 @@
 #define __CONFIG_H
 #include <asm/sizes.h>
 
-/*
+/* ----------------------------------------------------------------------------
  * High Level Configuration Options
+ * ----------------------------------------------------------------------------
  */
 #define CONFIG_ARMCORTEXA8	1	/* This is an ARM V7 CPU core */
 #define CONFIG_OMAP		1	/* in a TI OMAP core */
@@ -33,8 +34,9 @@
 #include <asm/arch/cpu.h>		/* get chip and board defs */
 #include <asm/arch/omap3.h>
 
-/*
+/* ----------------------------------------------------------------------------
  * Display CPU and Board information
+ * ----------------------------------------------------------------------------
  */
 #define CONFIG_DISPLAY_CPUINFO		1
 #define CONFIG_DISPLAY_BOARDINFO	1
@@ -51,22 +53,11 @@
 #define CONFIG_INITRD_TAG		1
 #define CONFIG_REVISION_TAG		1
 
-/*
- * Size of malloc() pool
- */
-#define CONFIG_ENV_SIZE			SZ_128K	/* Total Size Environment */
-						/* Sector */
-#define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + SZ_128K)
-#define CONFIG_SYS_GBL_DATA_SIZE	128	/* bytes reserved for */
-						/* initial data */
-
-/*
- * Hardware drivers
- */
-
-/*
+/* ----------------------------------------------------------------------------
  * NS16550 Configuration
+ * ----------------------------------------------------------------------------
  */
+
 #define V_NS16550_CLK			48000000	/* 48MHz (APLL96/2) */
 
 #define CONFIG_SYS_NS16550
@@ -74,9 +65,7 @@
 #define CONFIG_SYS_NS16550_REG_SIZE	(-4)
 #define CONFIG_SYS_NS16550_CLK		V_NS16550_CLK
 
-/*
- * select serial console configuration
- */
+/* select serial console configuration */
 #define CONFIG_CONS_INDEX		3
 #define CONFIG_SYS_NS16550_COM3		OMAP34XX_UART3
 #define CONFIG_SERIAL3			3
@@ -94,21 +83,20 @@
 
 #define CONFIG_CMD_EXT2		/* EXT2 Support			*/
 #define CONFIG_CMD_FAT		/* FAT support			*/
-#define CONFIG_CMD_JFFS2	/* JFFS2 Support		*/
-
 #define CONFIG_CMD_I2C		/* I2C serial bus support	*/
 #define CONFIG_CMD_MMC		/* MMC support			*/
-/* (disabled) #define CONFIG_CMD_NAND	   NAND support			*/
 #define CONFIG_CMD_ONENAND	/* ONENAND support		*/
 #define CONFIG_CMD_NET		/* bootp, tftpboot, rarpboot	*/
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_PING
+#define CONFIG_CMD_NFS		/* NFS support			*/
 
 #undef CONFIG_CMD_FLASH		/* flinfo, erase, protect	*/
 #undef CONFIG_CMD_FPGA		/* FPGA configuration Support	*/
 #undef CONFIG_CMD_IMI		/* iminfo			*/
 #undef CONFIG_CMD_IMLS		/* List all found images	*/
-#undef CONFIG_CMD_NFS		/* NFS support			*/
+#undef CONFIG_CMD_JFFS2		/* JFFS2 Support		*/
+#undef CONFIG_CMD_NAND	  	/* NAND support			*/
 
 #define CONFIG_SYS_NO_FLASH
 #define CONFIG_SYS_I2C_SPEED		100000
@@ -117,48 +105,23 @@
 #define CONFIG_SYS_I2C_BUS_SELECT	1
 #define CONFIG_DRIVER_OMAP34XX_I2C	1
 
-/*
+/* ----------------------------------------------------------------------------
  * TWL4030
+ * ----------------------------------------------------------------------------
  */
 #define CONFIG_TWL4030_POWER		1
 #define CONFIG_TWL4030_LED		1
 
-/*
- * Board NAND Info.
- */
-#if defined(CONFIG_CMD_NAND)
-#define CONFIG_NAND_OMAP_GPMC
-#endif
-#define CONFIG_SYS_NAND_ADDR		NAND_BASE	/* physical address */
-							/* to access nand */
-#define CONFIG_SYS_NAND_BASE		NAND_BASE	/* physical address */
-							/* to access nand at */
-							/* CS0 */
-#define GPMC_NAND_ECC_LP_x16_LAYOUT	1
-
-#define CONFIG_SYS_MAX_NAND_DEVICE	1		/* Max number of NAND */
-							/* devices */
-#define CONFIG_SYS_64BIT_VSPRINTF		/* needed for nand_util.c */
-
-#define CONFIG_JFFS2_NAND
-/* nand device jffs2 lives on */
-#define CONFIG_JFFS2_DEV		"nand0"
-/* start of jffs2 partition */
-#define CONFIG_JFFS2_PART_OFFSET	0x680000
-#define CONFIG_JFFS2_PART_SIZE		0xf980000	/* size of jffs2 */
-							/* partition */
-
 /* Environment information */
 #define CONFIG_BOOTDELAY		3
-
-#define CONFIG_EXTRA_ENV_SETTINGS "\0"
-
-#define CONFIG_BOOTCOMMAND	"mmc init 0 ; fatload mmc 0 0x80000000 setup.ini ; source \0"
+#define CONFIG_EXTRA_ENV_SETTINGS	"\0"
+#define CONFIG_BOOTCOMMAND		"mmc init 0 ; fatload mmc 0 0x80000000 setup.ini ; source \0"
 
 #define CONFIG_AUTO_COMPLETE		1
 
-/*
+/* ----------------------------------------------------------------------------
  * Miscellaneous configurable options
+ * ----------------------------------------------------------------------------
  */
 #define V_PROMPT			"U-Boot # "
 
@@ -191,9 +154,9 @@
 #define CONFIG_SYS_PTV			2       /* Divisor: 2^(PTV+1) => 8 */
 #define CONFIG_SYS_HZ			1000
 
-/*-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------------
  * Stack sizes
- *
+ * ----------------------------------------------------------------------------
  * The stack sizes are set up in start.S using the settings below
  */
 #define CONFIG_STACKSIZE	SZ_128K	/* regular stack */
@@ -202,8 +165,9 @@
 #define CONFIG_STACKSIZE_FIQ	SZ_4K	/* FIQ stack */
 #endif
 
-/*-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------------
  * Physical Memory Map
+ * ----------------------------------------------------------------------------
  */
 #define CONFIG_NR_DRAM_BANKS	2	/* CS1 may or may not be populated */
 #define PHYS_SDRAM_1		OMAP34XX_SDRC_CS0
@@ -213,52 +177,44 @@
 /* SDRAM Bank Allocation method */
 #define SDRC_R_B_C		1
 
-/*-----------------------------------------------------------------------
+/* ----------------------------------------------------------------------------
  * FLASH and environment organization
+ * ----------------------------------------------------------------------------
  */
 
-/* **** PISMO SUPPORT *** */
-
-/* Configure the PISMO */
-#define PISMO1_NAND_SIZE		GPMC_SIZE_128M
-#define PISMO1_ONEN_SIZE		GPMC_SIZE_128M
-
-#define CONFIG_SYS_MAX_FLASH_SECT	520	/* max number of sectors on */
-						/* one chip */
-#define CONFIG_SYS_MAX_FLASH_BANKS	2	/* max number of flash banks */
-#define CONFIG_SYS_MONITOR_LEN		SZ_256K	/* Reserve 2 sectors */
+#define PISMO1_ONEN_SIZE		GPMC_SIZE_128M /* Configure the PISMO */
 
 #define CONFIG_SYS_FLASH_BASE		boot_flash_base
 
-/* Monitor at start of flash */
-#define CONFIG_SYS_MONITOR_BASE		CONFIG_SYS_FLASH_BASE
 #define CONFIG_SYS_ONENAND_BASE		ONENAND_MAP
 
 #define CONFIG_ENV_IS_IN_ONENAND	1
-#define ONENAND_ENV_OFFSET		0x240000 /* environment starts here */
-#define SMNAND_ENV_OFFSET		0x240000 /* environment starts here */
+
+#define CONFIG_ENV_SIZE			SZ_512K	/* Total Size Environment */
 
 #define CONFIG_SYS_ENV_SECT_SIZE	boot_flash_sec
 #define CONFIG_ENV_OFFSET		boot_flash_off
-#define CONFIG_ENV_ADDR			SMNAND_ENV_OFFSET
+#define ONENAND_ENV_OFFSET		0x240000 /* environment starts here */
 
-/*-----------------------------------------------------------------------
- * CFI FLASH driver setup
+#define CONFIG_ENV_ADDR			ONENAND_ENV_OFFSET
+
+#define CONFIG_MTD_ONENAND_2X_PROGRAM
+
+/* Monitor at start of flash */
+#define CONFIG_SYS_MONITOR_BASE		CONFIG_SYS_FLASH_BASE
+#define CONFIG_SYS_MONITOR_LEN		SZ_256K	/* Reserve 2 sectors */
+
+/* ----------------------------------------------------------------------------
+ * Size of malloc() pool
+ * ----------------------------------------------------------------------------
  */
-/* timeout values are in ticks */
-#define CONFIG_SYS_FLASH_ERASE_TOUT	(100 * CONFIG_SYS_HZ)
-#define CONFIG_SYS_FLASH_WRITE_TOUT	(100 * CONFIG_SYS_HZ)
+#define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + SZ_128K)
+#define CONFIG_SYS_GBL_DATA_SIZE	128	/* bytes reserved for */
+						/* initial data */
 
-/* Flash banks JFFS2 should use */
-#define CONFIG_SYS_MAX_MTD_BANKS	(CONFIG_SYS_MAX_FLASH_BANKS + \
-					CONFIG_SYS_MAX_NAND_DEVICE)
-#define CONFIG_SYS_JFFS2_MEM_NAND
-/* use flash_info[2] */
-#define CONFIG_SYS_JFFS2_FIRST_BANK	CONFIG_SYS_MAX_FLASH_BANKS
-#define CONFIG_SYS_JFFS2_NUM_BANKS	1
-
-/*----------------------------------------------------------------------------
+/* ----------------------------------------------------------------------------
  * SMSC911x Ethernet
+ * ----------------------------------------------------------------------------
  */
 #if defined(CONFIG_CMD_NET)
 
