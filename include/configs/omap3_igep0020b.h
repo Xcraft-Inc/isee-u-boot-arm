@@ -194,7 +194,7 @@
 
 #define CONFIG_SYS_ENV_SECT_SIZE	boot_flash_sec
 #define CONFIG_ENV_OFFSET		boot_flash_off
-#define ONENAND_ENV_OFFSET		0x240000 /* environment starts here */
+#define ONENAND_ENV_OFFSET		0x200000 /* environment starts here */
 
 #define CONFIG_ENV_ADDR			ONENAND_ENV_OFFSET
 
