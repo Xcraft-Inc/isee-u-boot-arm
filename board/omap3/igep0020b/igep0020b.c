@@ -166,6 +166,22 @@ void dss_init(void)
 }
 
 /*
+ * Routine: get_prod_id
+ * Description: Get id info from chips
+ */
+#define PRODUCT_ID_SKUID	0x4830A20C
+#define CPU_35XX_PID_MASK	0x0000000F
+#define CPU_35XX_600MHZ_DEV 0x0
+#define CPU_35XX_720MHZ_DEV 0x8
+static u32 get_prod_id(void)
+{
+	u32 p;
+	/* get production ID */
+	p = __raw_readl(PRODUCT_ID_SKUID);
+	return (p & CPU_35XX_PID_MASK);
+}
+
+/*
  * Routine: misc_init_r
  * Description: Configure board specific parts
  */
@@ -173,6 +189,21 @@ int misc_init_r(void)
 {
 	twl4030_power_init();
 	twl4030_led_init();
+
+	/* Select TWL4030 VSEL to support 720Mhz */
+	if (get_prod_id() == CPU_35XX_720MHZ_DEV) {
+		twl4030_pmrecv_vsel_cfg(TWL4030_PM_RECEIVER_VAUX2_DEDICATED,
+			VAUX2_VSEL_18,
+			TWL4030_PM_RECEIVER_VAUX2_DEV_GRP,
+			DEV_GRP_P1);
+
+		twl4030_pmrecv_vsel_cfg(TWL4030_PM_RECEIVER_VDD1_VSEL,
+			VDD1_VSEL_14,
+			TWL4030_PM_RECEIVER_VDD1_DEV_GRP,
+			DEV_GRP_P1);
+
+		prcm_config_720mhz();
+	}
 
 	dss_init();
 
