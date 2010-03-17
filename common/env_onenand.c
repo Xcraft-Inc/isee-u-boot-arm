@@ -111,7 +111,7 @@ void env_relocate_spec(void)
 int saveenv(void)
 {
 	struct mtd_info *mtd = &onenand_mtd;
-	loff_t env_addr = CONFIG_ENV_ADDR;
+	unsigned int env_addr = CONFIG_ENV_ADDR;
 	struct erase_info instr = {
 		.callback	= NULL,
 	};
