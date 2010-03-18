@@ -25,7 +25,7 @@
 
 const omap3_sysinfo sysinfo = {
 	DDR_STACKED,
-	"IGEP v2.x rev. B",
+	"IGEP v2 board",
 	"ONENAND",
 };
 

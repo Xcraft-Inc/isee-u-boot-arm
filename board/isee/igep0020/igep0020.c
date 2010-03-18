@@ -35,7 +35,7 @@
 #include <asm/arch/mux.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/mach-types.h>
-#include "igep0020b.h"
+#include "igep0020.h"
 
 /*
  * Routine: board_init

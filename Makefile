@@ -3090,9 +3090,6 @@ trab_old_config:	unconfig
 VCMA9_config	:	unconfig
 	@$(MKCONFIG) $(@:_config=) arm arm920t vcma9 mpl s3c24x0
 
-omap3_igep0020b_config :	unconfig
-	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 igep0020b isee omap3
-
 #########################################################################
 # ARM supplied Versatile development boards
 #########################################################################
@@ -3170,6 +3167,9 @@ omap3_zoom1_config :	unconfig
 
 omap3_zoom2_config :	unconfig
 	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 zoom2 logicpd omap3
+
+omap3_igep0020_config :	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 igep0020 isee omap3
 
 smdkc100_config:	unconfig
 	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 smdkc100 samsung s5pc1xx

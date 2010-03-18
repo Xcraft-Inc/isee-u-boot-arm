@@ -1,5 +1,5 @@
 /*
- * Configuration settings for the IGEP v2.x series rev. B board.
+ * Configuration settings for the IGEP v2 board.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
