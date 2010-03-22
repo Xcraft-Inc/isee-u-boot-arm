@@ -190,13 +190,13 @@ static void setup_net_chip(void);
 /* MUX_VAL(CP(MMC2_DAT2),		(IEN  | PTD | DIS | M4)) GPIO_134    */\
 /* MUX_VAL(CP(MMC2_DAT3),		(IEN  | PTD | DIS | M4)) GPIO_135 (GPIO-Based CS) */\
  \
- MUX_VAL(CP(CAM_HS),		(IDIS | PTD | DIS | M4)) /* GPIO_94 - PDN */\
- MUX_VAL(CP(CAM_VS),		(IDIS | PTD | DIS | M4)) /* GPIO_95 - RESET_N_W */\
+ MUX_VAL(CP(CAM_HS),		(IDIS | PTD | DIS | M4)) /* GPIO_94 - PDN (Rev. B) */\
+ MUX_VAL(CP(CAM_VS),		(IDIS | PTD | DIS | M4)) /* GPIO_95 - RESET_N_W (Rev. B) */\
  \
- MUX_VAL(CP(MMC2_DAT4),		(IEN  | PTU | EN  | M0)) /* MMC2_DIR_DAT0 */\
- MUX_VAL(CP(MMC2_DAT5),		(IEN  | PTU | EN  | M0)) /* MMC2_DIR_DAT1 */\
- MUX_VAL(CP(MMC2_DAT6),		(IEN  | PTU | EN  | M0)) /* MMC2_DIR_CMD  */\
- MUX_VAL(CP(MMC2_DAT7),		(IEN  | PTU | EN  | M0)) /* MMC2_CLKIN    */\
+ MUX_VAL(CP(MMC2_DAT4),		(IDIS | PTD | DIS | M4)) /* GPIO_136 */\
+ MUX_VAL(CP(MMC2_DAT5),		(IDIS | PTD | DIS | M4)) /* GPIO_137 - RESET_N_B */\
+ MUX_VAL(CP(MMC2_DAT6),		(IDIS | PTD | DIS | M4)) /* GPIO_138 - PDN (Rev. C)  */\
+ MUX_VAL(CP(MMC2_DAT7),		(IDIS | PTD | DIS | M4)) /* GPIO_139 - RESET_N_W (Rev. C) */\
  /* Bluetooth (EXPANSION CONNECTOR) */\
  MUX_VAL(CP(MCBSP3_DX),		(IDIS | PTD | DIS | M0)) /* McBSP3_DX */\
  MUX_VAL(CP(MCBSP3_DR),		(IEN  | PTD | DIS | M0)) /* McBSP3_DR */\
