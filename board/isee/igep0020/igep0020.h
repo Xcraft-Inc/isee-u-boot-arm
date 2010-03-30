@@ -244,7 +244,7 @@ static void setup_net_chip(void);
  MUX_VAL(CP(MCSPI1_SOMI),	(IEN  | PTD | DIS | M0)) /* McSPI1_SOMI */\
  MUX_VAL(CP(MCSPI1_CS3),	(IDIS | PTD | DIS | M0)) /* McSPI1_CS3  */\
  \
- MUX_VAL(CP(MCSPI1_CS0),	(IEN  | PTD | DIS | M4)) /* GPIO_174   */\
+ MUX_VAL(CP(MCSPI1_CS0),	(IDIS | PTD | DIS | M0)) /* McSPI1_CS0  */\
  MUX_VAL(CP(MCSPI1_CS1),	(IEN  | PTD | DIS | M4)) /* GPIO_175   */\
  MUX_VAL(CP(MCSPI1_CS2),	(IEN  | PTD | DIS | M4)) /* GPIO_176   */\
  /* SPI2 (25GHz RF PORT) */ \
