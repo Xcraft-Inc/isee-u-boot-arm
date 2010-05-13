@@ -30,7 +30,5 @@
 # (mem base + reserved)
 
 # For use with external or internal boots.
-# TEXT_BASE = 0x80e80000
-# TEXT_BASE = 0x9fe80000
-TEXT_BASE = 0x8ff00000
+TEXT_BASE = 0x80e80000
 
