@@ -2401,6 +2401,7 @@ extern unsigned int __machine_arch_type;
 #define MACH_TYPE_MULTIBUS_MASTER      2416
 #define MACH_TYPE_MULTIBUS_PBK         2417
 #define MACH_TYPE_TNETV107X            2418
+#define MACH_TYPE_IGEP0030             2717
 
 #ifdef CONFIG_ARCH_EBSA110
 # ifdef machine_arch_type
@@ -31040,6 +31041,18 @@ extern unsigned int __machine_arch_type;
 
 #ifndef machine_arch_type
 #define machine_arch_type	__machine_arch_type
+#endif
+
+#ifdef CONFIG_MACH_IGEP0030
+# ifdef machine_arch_type
+#  undef machine_arch_type
+#  define machine_arch_type	__machine_arch_type
+# else
+#  define machine_arch_type	MACH_TYPE_IGEP0030
+# endif
+# define machine_is_igep0030()	(machine_arch_type == MACH_TYPE_IGEP0030)
+#else
+# define machine_is_igep0030()	(0)
 #endif
 
 #endif
