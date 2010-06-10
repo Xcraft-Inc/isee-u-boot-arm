@@ -3171,6 +3171,9 @@ omap3_zoom2_config :	unconfig
 omap3_igep0020_config :	unconfig
 	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 igep0020 isee omap3
 
+omap3_igep0030_config :	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 igep0030 isee omap3
+
 smdkc100_config:	unconfig
 	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 smdkc100 samsung s5pc1xx
 
