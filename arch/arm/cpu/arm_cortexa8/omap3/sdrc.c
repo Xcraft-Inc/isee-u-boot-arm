@@ -176,9 +176,10 @@ int dram_init(void)
 	 * memory on CS0.
 	 */
 	if ((sysinfo.mtype == DDR_COMBO) || (sysinfo.mtype == DDR_STACKED)) {
+#if 0
 		do_sdrc_init(CS1, NOT_EARLY);
 		make_cs1_contiguous();
-
+#endif
 		size1 = get_sdr_cs_size(CS1);
 	}
 
