@@ -3172,6 +3172,9 @@ devkit8000_config :	unconfig
 igep0020_config :	unconfig
 	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 igep0020 isee omap3
 
+igep0030_config :	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 igep0030 isee omap3
+
 omap3_beagle_config :	unconfig
 	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 beagle ti omap3
 

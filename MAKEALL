@@ -649,6 +649,7 @@ LIST_ARM_CORTEX_A8="		\
 	am3517_evm		\
 	devkit8000		\
 	igep0020		\
+	igep0030		\
 	mx51evk			\
 	omap3_beagle		\
 	omap3_overo		\
