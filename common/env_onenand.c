@@ -120,7 +120,7 @@ int saveenv(void)
 #ifdef CONFIG_ENV_ADDR_FLEX
 	struct onenand_chip *this = &onenand_chip;
 #endif
-	loff_t env_addr = CONFIG_ENV_ADDR;
+	unsigned int env_addr = CONFIG_ENV_ADDR;
 	struct erase_info instr = {
 		.callback	= NULL,
 	};
