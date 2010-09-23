@@ -143,21 +143,12 @@ const omap3_sysinfo sysinfo = {
 	MUX_VAL(CP(SYS_BOOT4),      (IEN  | PTD | DIS | M4)) /* GPIO_6 */\
 	MUX_VAL(CP(SYS_BOOT5),      (IEN  | PTD | DIS | M4)) /* GPIO_7 */\
 	MUX_VAL(CP(SYS_BOOT6),      (IEN  | PTD | DIS | M4)) /* GPIO_8 */\
-	MUX_VAL(CP(ETK_CLK),        (IEN  | PTD | DIS | M4)) /* GPIO_12 */\
-	MUX_VAL(CP(ETK_CTL),        (IEN  | PTD | DIS | M4)) /* GPIO_13 */\
-	MUX_VAL(CP(ETK_D0),         (IEN  | PTD | DIS | M4)) /* GPIO_14 */\
-	MUX_VAL(CP(ETK_D1),         (IEN  | PTD | DIS | M4)) /* GPIO_15 */\
 /* LED1_RED */\
 	MUX_VAL(CP(ETK_D2),         (IDIS | PTD | DIS | M4)) /* GPIO_16 */\
-	MUX_VAL(CP(ETK_D11),        (IEN  | PTD | DIS | M4)) /* GPIO_25 */\
-	MUX_VAL(CP(ETK_D12),        (IEN  | PTD | DIS | M4)) /* GPIO_26 */\
-	MUX_VAL(CP(ETK_D13),        (IEN  | PTD | DIS | M4)) /* GPIO_27 */\
-	MUX_VAL(CP(ETK_D14),        (IEN  | PTD | DIS | M4)) /* GPIO_28 */\
-	MUX_VAL(CP(ETK_D15),        (IEN  | PTD | DIS | M4)) /* GPIO_29 */\
 /* USBH_CPEN */\
-	MUX_VAL(CP(I2C2_SCL),		(IEN  | PTU | EN  | M4)) /* GPIO_168 */\
+/*	MUX_VAL(CP(I2C2_SCL),		(IEN  | PTU | EN  | M4))  GPIO_168 */\
 /* USBH_NRESET */\
-	MUX_VAL(CP(CSI2_DY1),		(IEN  | PTU | EN  | M4)) /* GPIO_115 */\
+/*	MUX_VAL(CP(CSI2_DY1),		(IEN  | PTU | EN  | M4))  GPIO_115 */\
 	MUX_VAL(CP(SDRC_CKE0),      (IDIS | PTU | EN  | M0)) /* SDRC_CKE0 */\
 	MUX_VAL(CP(SDRC_CKE1),      (IDIS | PTU | EN  | M0)) /* SDRC_CKE1 */
 
