@@ -28,6 +28,15 @@ const omap3_sysinfo sysinfo = {
 	"ONENAND",
 };
 
+/* GPMC CS 5 connected to an SMSC LAN9221 ethernet controller */
+#define NET_LAN9221_GPMC_CONFIG1    0x00001000
+#define NET_LAN9221_GPMC_CONFIG2    0x00080701
+#define NET_LAN9221_GPMC_CONFIG3    0x00020201
+#define NET_LAN9221_GPMC_CONFIG4    0x08030703
+#define NET_LAN9221_GPMC_CONFIG5    0x00060908
+#define NET_LAN9221_GPMC_CONFIG6    0x87030000
+#define NET_LAN9221_GPMC_CONFIG7    0x00000f6c
+
 /*
  * IEN  - Input Enable
  * IDIS - Input Disable
@@ -142,6 +151,7 @@ const omap3_sysinfo sysinfo = {
 	MUX_VAL(CP(SYS_BOOT5),      (IEN  | PTD | DIS | M4)) /* GPIO_7 */\
 	MUX_VAL(CP(SYS_BOOT6),      (IEN  | PTD | DIS | M4)) /* GPIO_8 */\
 	MUX_VAL(CP(SDRC_CKE0),      (IDIS | PTU | EN  | M0)) /* SDRC_CKE0 */\
-	MUX_VAL(CP(SDRC_CKE1),      (IDIS | PTU | EN  | M0)) /* SDRC_CKE1 */
+	MUX_VAL(CP(SDRC_CKE1),      (IDIS | PTU | EN  | M0)) /* SDRC_CKE1 */ \
+	MUX_VAL(CP(GPMC_WAIT2),     (IEN  | PTU | EN  | M4)) /* ETH_NRESET-64 */
 
 #endif
