@@ -542,13 +542,17 @@ void prcm_init(void)
 	sr32(&prm_base->clksel, 0, 3, sys_clkin_sel);
 
 	/* If the input clock is greater than 19.2M always divide/2 */
-	if (sys_clkin_sel > 2) {
-		/* input clock divider */
-		sr32(&prm_base->clksrc_ctrl, 6, 2, 2);
+	/*
+	 * On OMAP3630, DDR data corruption has been observed on OFF mode
+	 * exit if the sys clock was lower than 26M. As a work around,
+	 * OMAP3630 is operated at 26M sys clock and this internal division
+	 * is not performed.
+	 */
+	if((get_cpu_family() != CPU_OMAP36XX) && (sys_clkin_sel > 2)) {
+		sr32(&prm_base->clksrc_ctrl, 6, 2, 2); /* input clock divider */
 		clk_index = sys_clkin_sel / 2;
 	} else {
-		/* input clock divider */
-		sr32(&prm_base->clksrc_ctrl, 6, 2, 1);
+		sr32(&prm_base->clksrc_ctrl, 6, 2, 1); /* input clock divider */
 		clk_index = sys_clkin_sel;
 	}
 
