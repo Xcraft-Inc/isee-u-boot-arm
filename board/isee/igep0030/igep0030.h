@@ -24,7 +24,7 @@
 
 const omap3_sysinfo sysinfo = {
 	DDR_STACKED,
-	"OMAP3 IGEP module",
+	"IGEP0030 COM",
 	"ONENAND",
 };
 
