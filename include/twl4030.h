@@ -473,7 +473,7 @@
  * Voltage Selection in PM Receiver Module
  */
 #define VAUX2_VSEL_18		0x05
-#define VDD1_VSEL_14		0x40
+#define VDD1_VSEL_135		0x3C
 #define VAUX3_VSEL_28		0x03
 #define VPLL2_VSEL_18		0x05
 #define VDAC_VSEL_18		0x03

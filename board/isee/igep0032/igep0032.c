@@ -109,22 +109,21 @@ static u32 get_prod_id(void)
  */
 int misc_init_r(void)
 {
-	twl4030_power_init();
-/*	twl4030_led_init(); */
+        /* set VDD1 to 1.35 for DM37x */
+        if (get_cpu_family() == CPU_OMAP36XX)
+                twl4030_pmrecv_vsel_cfg(TWL4030_PM_RECEIVER_VDD1_VSEL,
+                        VDD1_VSEL_135,
+                        TWL4030_PM_RECEIVER_VDD1_DEV_GRP, DEV_GRP_P1);
 
-	/* Select TWL4030 VSEL to support 720Mhz */
-	if (get_prod_id() == CPU_35XX_720MHZ_DEV) {
-		twl4030_pmrecv_vsel_cfg(TWL4030_PM_RECEIVER_VAUX2_DEDICATED,
-				VAUX2_VSEL_18,
-				TWL4030_PM_RECEIVER_VAUX2_DEV_GRP,
-				DEV_GRP_P1);
+        twl4030_power_init();
 
-		twl4030_pmrecv_vsel_cfg(TWL4030_PM_RECEIVER_VDD1_VSEL,
-				VDD1_VSEL_14,
-				TWL4030_PM_RECEIVER_VDD1_DEV_GRP,
-				DEV_GRP_P1);
-		prcm_config_720mhz();
-	}
+        /* Select TWL4030 VSEL to support 720Mhz */
+        if (get_prod_id() == CPU_35XX_720MHZ_DEV) {
+                twl4030_pmrecv_vsel_cfg(TWL4030_PM_RECEIVER_VDD1_VSEL,
+                        VDD1_VSEL_135,
+                        twl4030_PM_RECEIVER_VDD1_DEV_GRP, DEV_GRP_P1);
+                prcm_config_720mhz();
+        }
 
 #if defined(CONFIG_CMD_NET)
 	setup_net_chip();
