@@ -22,11 +22,34 @@
 #include <common.h>
 #include <twl4030.h>
 #include <asm/io.h>
+#include <asm/arch/gpio.h>
 #include <asm/arch/mem.h>
 #include <asm/arch/mux.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/mach-types.h>
 #include "igep0030.h"
+
+/* OMAP35x GPMC definitions for LAN9221 chips on Tobi expansion boards */
+static const u32 gpmc_35x_lan_config[] = {
+    NET_GPMC_CONFIG1,
+    NET_GPMC_CONFIG2,
+    NET_GPMC_CONFIG3,
+    NET_GPMC_CONFIG4,
+    NET_GPMC_CONFIG5,
+    NET_GPMC_CONFIG6,
+    /*CONFIG7- computed as params */
+};
+
+/* DM37x GPMC definitions for LAN9221 chips on Tobi expansion boards */
+static const u32 gpmc_37x_lan_config[] = {
+    NET_37X_LAN9221_GPMC_CONFIG1,
+    NET_37X_LAN9221_GPMC_CONFIG2,
+    NET_37X_LAN9221_GPMC_CONFIG3,
+    NET_37X_LAN9221_GPMC_CONFIG4,
+    NET_37X_LAN9221_GPMC_CONFIG5,
+    NET_37X_LAN9221_GPMC_CONFIG6,
+    /*CONFIG7- computed as params */
+};
 
 /*
  * Routine: board_init
@@ -43,6 +66,50 @@ int board_init(void)
 	gd->bd->bi_boot_params = (OMAP34XX_SDRC_CS0 + 0x100);
 
 	return 0;
+}
+
+/*
+ * Routine: setup_net_chip
+ * Description: Setting up the configuration GPMC registers specific to the
+ *		Ethernet hardware.
+ */
+static void setup_net_chip()
+{
+	struct ctrl *ctrl_base = (struct ctrl *)OMAP34XX_CTRL_BASE;
+
+	/* Configure GPMC registers */
+	if (get_cpu_family() == CPU_OMAP36XX) {
+		enable_gpmc_cs_config(gpmc_37x_lan_config, &gpmc_cfg->cs[5],
+			0x2C000000, GPMC_SIZE_16M);
+
+		enable_gpmc_cs_config(gpmc_37x_lan_config, &gpmc_cfg->cs[4],
+			0x2B000000, GPMC_SIZE_16M);
+	} else {
+		enable_gpmc_cs_config(gpmc_35x_lan_config, &gpmc_cfg->cs[5],
+			0x2C000000, GPMC_SIZE_16M);
+
+		enable_gpmc_cs_config(gpmc_35x_lan_config, &gpmc_cfg->cs[4],
+			0x2B000000, GPMC_SIZE_16M);
+
+	}
+
+	/* Enable off mode for NWE in PADCONF_GPMC_NWE register */
+	writew(readw(&ctrl_base ->gpmc_nwe) | 0x0E00, &ctrl_base->gpmc_nwe);
+	/* Enable off mode for NOE in PADCONF_GPMC_NADV_ALE register */
+	writew(readw(&ctrl_base->gpmc_noe) | 0x0E00, &ctrl_base->gpmc_noe);
+	/* Enable off mode for ALE in PADCONF_GPMC_NADV_ALE register */
+	writew(readw(&ctrl_base->gpmc_nadv_ale) | 0x0E00,
+		&ctrl_base->gpmc_nadv_ale);
+
+	/* Make GPIO as output pin and send a magic pulse through it */
+	if (!omap_request_gpio(42)) {
+		omap_set_gpio_direction(42, 0);
+		omap_set_gpio_dataout(42, 1);
+		udelay(1);
+		omap_set_gpio_dataout(42, 0);
+		udelay(1);
+		omap_set_gpio_dataout(42, 1);
+	}
 }
 
 /*
@@ -107,7 +174,10 @@ void set_muxconf_regs(void)
 int board_eth_init(bd_t *bis)
 {
 	int rc = 0;
-
+#ifdef CONFIG_SMC911X
+	rc = smc911x_initialize(0, 0x2B000000);
+	rc = smc911x_initialize(1, 0x2C000000);
+#endif
 	return rc;
 }
 

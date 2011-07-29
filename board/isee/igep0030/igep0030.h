@@ -28,6 +28,24 @@ const omap3_sysinfo sysinfo = {
 	"ONENAND",
 };
 
+/* OMAP35x GPMC connected to an SMSC LAN9221 ethernet controller */
+#define NET_35X_LAN9221_GPMC_CONFIG1    0x00001000
+#define NET_35X_LAN9221_GPMC_CONFIG2    0x00080701
+#define NET_35X_LAN9221_GPMC_CONFIG3    0x00020201
+#define NET_35X_LAN9221_GPMC_CONFIG4    0x08030703
+#define NET_35X_LAN9221_GPMC_CONFIG5    0x00060908
+#define NET_35X_LAN9221_GPMC_CONFIG6    0x87030000
+#define NET_35X_LAN9221_GPMC_CONFIG7    0x00000f6c
+
+/* DM37x GPMC connected to an SMSC LAN9221 ethernet controller */
+#define NET_37X_LAN9221_GPMC_CONFIG1    0x00001000
+#define NET_37X_LAN9221_GPMC_CONFIG2    0x00090901
+#define NET_37X_LAN9221_GPMC_CONFIG3    0x00080300
+#define NET_37X_LAN9221_GPMC_CONFIG4    0x09010901
+#define NET_37X_LAN9221_GPMC_CONFIG5    0x03080a0a
+#define NET_37X_LAN9221_GPMC_CONFIG6    0x880002c7
+#define NET_37X_LAN9221_GPMC_CONFIG7    0x00000f6c
+
 /*
  * IEN  - Input Enable
  * IDIS - Input Disable
@@ -85,7 +103,6 @@ const omap3_sysinfo sysinfo = {
 	MUX_VAL(CP(GPMC_A6),        (IDIS | PTD | DIS | M0)) /* GPMC_A6 */\
 	MUX_VAL(CP(GPMC_A7),        (IDIS | PTD | DIS | M0)) /* GPMC_A7 */\
 	MUX_VAL(CP(GPMC_A8),        (IDIS | PTD | DIS | M0)) /* GPMC_A8 */\
-	MUX_VAL(CP(GPMC_A9),        (IDIS | PTD | DIS | M0)) /* GPMC_A9 */\
 	MUX_VAL(CP(GPMC_A10),       (IDIS | PTD | DIS | M0)) /* GPMC_A10 */\
 	MUX_VAL(CP(GPMC_D0),        (IEN  | PTD | DIS | M0)) /* GPMC_D0 */\
 	MUX_VAL(CP(GPMC_D1),        (IEN  | PTD | DIS | M0)) /* GPMC_D1 */\
@@ -104,12 +121,10 @@ const omap3_sysinfo sysinfo = {
 	MUX_VAL(CP(GPMC_D14),       (IEN  | PTD | DIS | M0)) /* GPMC_D14 */\
 	MUX_VAL(CP(GPMC_D15),       (IEN  | PTD | DIS | M0)) /* GPMC_D15 */\
 	MUX_VAL(CP(GPMC_NCS0),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS0 */\
-	MUX_VAL(CP(GPMC_NCS1),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS1 */\
 /* LED0_RED */\
 	MUX_VAL(CP(GPMC_NCS2),      (IDIS | PTD | DIS | M4)) /* GPIO_53 */\
 /* LED0_GREEN */\
 	MUX_VAL(CP(GPMC_NCS3),      (IDIS | PTD | DIS | M4)) /* GPIO_54 */\
-	MUX_VAL(CP(GPMC_NCS4),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS4 */\
 	MUX_VAL(CP(GPMC_NCS5),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS5 */\
 	MUX_VAL(CP(GPMC_NCS6),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS6 */\
 	MUX_VAL(CP(GPMC_NCS7),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS7 */\
@@ -150,7 +165,12 @@ const omap3_sysinfo sysinfo = {
 /* USBH_NRESET */\
 /*	MUX_VAL(CP(CSI2_DY1),		(IEN  | PTU | EN  | M4))  GPIO_115 */\
 	MUX_VAL(CP(SDRC_CKE0),      (IDIS | PTU | EN  | M0)) /* SDRC_CKE0 */\
-	MUX_VAL(CP(SDRC_CKE1),      (IDIS | PTU | EN  | M0)) /* SDRC_CKE1 */
+	MUX_VAL(CP(SDRC_CKE1),      (IDIS | PTU | EN  | M0)) /* SDRC_CKE1 */\
+/* Ethernet 0: BASE0010 Rev. B */\
+	MUX_VAL(CP(GPMC_NCS5),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS4 */\
+	MUX_VAL(CP(GPMC_A9),        (IEN  | PTD | DIS | M4)) /* GPIO_42_NRESET */\
+	MUX_VAL(CP(GPMC_NCS1),      (IEN  | PTD | DIS | M4)) /* GPIO_52_IRQ */\
+	MUX_VAL(CP(GPMC_WAIT2),	(IEN  | PTU | EN  | M4)) /* GPIO_64 -ETH_NRESET */\
 
 #endif
 
