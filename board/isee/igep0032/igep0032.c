@@ -121,7 +121,7 @@ int misc_init_r(void)
         if (get_prod_id() == CPU_35XX_720MHZ_DEV) {
                 twl4030_pmrecv_vsel_cfg(TWL4030_PM_RECEIVER_VDD1_VSEL,
                         VDD1_VSEL_135,
-                        twl4030_PM_RECEIVER_VDD1_DEV_GRP, DEV_GRP_P1);
+                        TWL4030_PM_RECEIVER_VDD1_DEV_GRP, DEV_GRP_P1);
                 prcm_config_720mhz();
         }
 
