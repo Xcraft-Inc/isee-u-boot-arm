@@ -117,7 +117,7 @@ void s_init(void)
 	/* Configure board pin mux */
 	enable_board_pin_mux();
 
-	config_ddr(303, K4B2G1646EBIH9_IOCTRL_VALUE, &ddr3_data,
+	config_ddr(400, K4B2G1646EBIH9_IOCTRL_VALUE, &ddr3_data,
 		   &ddr3_cmd_ctrl_data, &ddr3_emif_reg_data, 0);
 #endif
 }
