@@ -24,7 +24,10 @@
 #include <i2c.h>
 #include <tca642x.h>
 
+#define __tca6416__
+
 /* tca642x register address definitions */
+#ifndef __tca6416__
 struct tca642x_bank_info tca642x_regs[] = {
 	{ .input_reg = 0x00,
 	  .output_reg = 0x04,
@@ -39,6 +42,18 @@ struct tca642x_bank_info tca642x_regs[] = {
 	  .polarity_reg = 0x0a,
 	  .configuration_reg = 0x0e },
 };
+#else
+struct tca642x_bank_info tca642x_regs[] = {
+	{ .input_reg = 0x00,
+	  .output_reg = 0x02,
+	  .polarity_reg = 0x04,
+	  .configuration_reg = 0x06 },
+	{ .input_reg = 0x01,
+	  .output_reg = 0x03,
+	  .polarity_reg = 0x05,
+	  .configuration_reg = 0x07 },
+};
+#endif
 
 /*
  * Modify masked bits in register
@@ -148,6 +163,7 @@ int tca642x_set_inital_state(uchar chip, struct tca642x_bank_info init_data[])
 	uint8_t polarity_reg;
 	uint8_t output_reg;
 
+#ifndef __tca6416__
 	for (i = 0; i < 3; i++) {
 		config_reg = tca642x_regs[i].configuration_reg;
 		ret = tca642x_reg_write(chip, config_reg, 0xff,
@@ -159,7 +175,19 @@ int tca642x_set_inital_state(uchar chip, struct tca642x_bank_info init_data[])
 		ret = tca642x_reg_write(chip, output_reg, 0xff,
 				init_data[i].output_reg);
 	}
-
+#else
+	for (i = 0; i < 2; i++) {
+		config_reg = tca642x_regs[i].configuration_reg;
+		ret = tca642x_reg_write(chip, config_reg, 0xff,
+				init_data[i].configuration_reg);
+		polarity_reg = tca642x_regs[i].polarity_reg;
+		ret = tca642x_reg_write(chip, polarity_reg, 0xff,
+				init_data[i].polarity_reg);
+		output_reg = tca642x_regs[i].output_reg;
+		ret = tca642x_reg_write(chip, output_reg, 0xff,
+				init_data[i].output_reg);
+	}
+#endif	
 	return ret;
 }
 
