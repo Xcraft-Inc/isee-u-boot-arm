@@ -10,6 +10,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
+// #define DEBUG
 
 #include <common.h>
 #include <usb.h>
@@ -126,6 +127,11 @@ static inline void omap_ehci_phy_reset(int on, int delay)
 #ifdef CONFIG_OMAP_EHCI_PHY3_RESET_GPIO
 	gpio_request(CONFIG_OMAP_EHCI_PHY3_RESET_GPIO, "USB PHY3 reset");
 	gpio_direction_output(CONFIG_OMAP_EHCI_PHY3_RESET_GPIO, !on);
+#endif
+	
+	/* Lan7500 Reset */
+#ifdef CONFIG_USB_ETHER_SMSC75XX	
+	gpio_direction_output(CONFIG_OMAP_USBLAN_RESET_GPIO, !on);
 #endif
 
 	/* Hold the PHY in RESET for enough time till DIR is high */
