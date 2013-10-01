@@ -13,6 +13,7 @@ ifdef CONFIG_USB_ETHER_ASIX
 COBJS-y += asix.o
 endif
 COBJS-$(CONFIG_USB_ETHER_SMSC95XX) += smsc95xx.o
+COBJS-$(CONFIG_USB_ETHER_SMSC75XX) += smsc75xx.o
 
 COBJS	:= $(COBJS-y)
 SRCS	:= $(COBJS:.o=.c)
