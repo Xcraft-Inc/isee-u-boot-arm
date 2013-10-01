@@ -40,10 +40,17 @@ const struct pad_conf_entry core_padconf_array_essential[] = {
 	{USBD0_HS_DP, (IEN | M0)},	/*  USBD0_HS_DP */
 	{USBD0_HS_DM, (IEN | M0)},	/*  USBD0_HS_DM */
 	{USBD0_SS_RX, (IEN | M0)},	/*  USBD0_SS_RX */
+	{I2C3_SCL, (IEN | M0)}, /* I2C5_SCL */
+	{I2C3_SDA, (IEN | M0)}, /* I2C5_SDA */
+	{I2C4_SCL, (IEN | M0)}, /* I2C5_SCL */
+	{I2C4_SDA, (IEN | M0)}, /* I2C5_SDA */
 	{I2C5_SCL, (IEN | M0)}, /* I2C5_SCL */
-	{I2C5_SDA, (IEN | M0)}, /* I2C5_SDA */
-	{HSI2_ACWAKE, (PTU | M6)},    /*  HSI2_ACWAKE */
-	{HSI2_CAFLAG, (PTU | M6)},    /*  HSI2_CAFLAG */
+	{I2C5_SDA, (IEN | M0)}, /* I2C5_SDA */	
+	{HSI2_ACWAKE, (PTU | M6)},    /*  HSI2_ACWAKE : GPMC_25 - USBH_nReset2, gpio3 79 */
+	{HSI2_CAFLAG, (PTU | M6)},    /*  HSI2_CAFLAG : USBH_nReset - gpio3 80*/ 
+	{HSI2_CAWAKE,  (PTU | M6)},    /* HSI2_CAWAKE : GPMC_24 - Lan Enable - gpio 78*/	
+	{C2C_DATA14, (PTU |IEN | M6)},    /*  C2C_DATA14 : GPMC 22 : GPIO4_119 msata_detect*/
+	/*{C2C_DATA15, (PTU | M6)},*/    /*  C2C_DATA15 : GPMC 23 : GPIO4_120 msata_1v8*/
 };
 
 const struct pad_conf_entry wkup_padconf_array_essential[] = {
@@ -52,7 +59,7 @@ const struct pad_conf_entry wkup_padconf_array_essential[] = {
 	{SR_PMIC_SDA, (PTU | IEN | M0)}, /* SR_PMIC_SDA */
 	{SYS_32K, (IEN | M0)}, /*  SYS_32K     */
 	{FREF_CLK1_OUT, (PTD | IEN | M0)},    /*  FREF_CLK1_OUT  */
-
+	{LLIB_WAKEREQIN, (PTU | M6)},    /*  GPIO1_15 - Lan Reset */
 };
 
 const struct pad_conf_entry core_padconf_array_non_essential[] = {
@@ -244,7 +251,7 @@ const struct pad_conf_entry core_padconf_array_non_essential[] = {
 	{UART6_TX, (PTU | IEN | M6)},    /*  GPIO5_149   */
 	{UART6_RX, (PTU | IEN | M6)},    /*  GPIO5_150   */
 	{UART6_CTS, (PTU | IEN | M6)},    /*  GPIO5_151   */
-	{UART6_RTS, (PTU | M0)},    /*  UART6_RTS   */
+	{UART6_RTS, (PTU | M0)},    /* UART6_RTS   */
 	{UART3_CTS_RCTX, (PTU | IEN | M6)},    /*  GPIO5_153   */
 	{UART3_RTS_IRSD, (PTU | IEN | M1)},    /*  HDQ_SIO     */
 	{I2C1_PMIC_SCL, (PTU | IEN | M0)},    /*  I2C1_PMIC_SCL  */
@@ -260,7 +267,7 @@ const struct pad_conf_entry wkup_padconf_array_non_essential[] = {
  * C2C driver could enable this mux setting if needed.
  */
 	{LLIA_WAKEREQIN, (M7)},    /*  SAFE MODE  */
-	{LLIB_WAKEREQIN, (M7)},    /*  SAFE MODE  */
+	/* {LLIB_WAKEREQIN, (M7)}, */    /*  SAFE MODE  */
 	{DRM_EMU0, (PTU | IEN | M0)},    /*  DRM_EMU0    */
 	{DRM_EMU1, (PTU | IEN | M0)},    /*  DRM_EMU1    */
 	{JTAG_NTRST, (IEN | M0)},    /*  JTAG_NTRST  */

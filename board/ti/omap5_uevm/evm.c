@@ -32,10 +32,13 @@ const struct omap_sysinfo sysinfo = {
 	"Board: OMAP5432 uEVM\n"
 };
 
+
+#define __tca6416__
 /**
  * @brief tca642x_init - uEVM default values for the GPIO expander
  * input reg, output reg, polarity reg, configuration reg
  */
+#ifndef __tca6416__ 
 struct tca642x_bank_info tca642x_init[] = {
 	{ .input_reg = 0x00,
 	  .output_reg = 0x04,
@@ -50,6 +53,18 @@ struct tca642x_bank_info tca642x_init[] = {
 	  .polarity_reg = 0x00,
 	  .configuration_reg = 0x40 },
 };
+#else
+struct tca642x_bank_info tca642x_init[] = {
+	{ .input_reg = 0x00,
+	  .output_reg = 0xFF,
+	  .polarity_reg = 0x00,
+	  .configuration_reg = 0x00 },
+	{ .input_reg = 0x00,
+	  .output_reg = 0xFF,
+	  .polarity_reg = 0x00,
+	  .configuration_reg = 0x00 },
+};
+#endif
 
 /**
  * @brief board_init
@@ -145,15 +160,111 @@ static void enable_host_clocks(void)
 			(OPTFCLKEN_USB_CH1_CLK_ENABLE | OPTFCLKEN_USB_CH2_CLK_ENABLE));
 }
 
+/*
+ * Modify masked bits in register
+ */
+static int usb03503_breg_write(unsigned int bus, uchar chip, uint8_t addr,
+		uint8_t reg_bit, uint8_t data)
+{
+	uint8_t valw;
+	int org_bus_num;
+	int ret;
+
+	org_bus_num = i2c_get_bus_num();
+	i2c_set_bus_num(bus);
+
+	if (i2c_read(chip, addr, 1, (uint8_t *)&valw, 1)) {
+		printf("Could not read before writing\n");
+		ret = -1;
+		goto error;
+	}
+	valw &= ~reg_bit;
+	valw |= data;
+
+	ret = i2c_write(chip, addr, 1, (u8 *)&valw, 1);
+
+error:
+	i2c_set_bus_num(org_bus_num);
+	return ret;
+}
+
+static int usb03503_reg_write(unsigned int bus, uchar chip, uint8_t addr,
+		uint8_t reg_bit, uint8_t data)
+{
+	uint8_t valw;
+	int org_bus_num;
+	int ret;
+
+	org_bus_num = i2c_get_bus_num();
+	i2c_set_bus_num(bus);
+	ret = i2c_write(chip, addr, 1, (u8 *)&data, 1);
+
+error:
+	i2c_set_bus_num(org_bus_num);
+	return ret;
+}
+
+static int usb3503_reg_read(unsigned int bus, uchar chip, uint8_t addr, uint8_t *data)
+{
+	uint8_t valw;
+	int org_bus_num;
+	int ret = 0;
+
+	org_bus_num = i2c_get_bus_num();
+	i2c_set_bus_num(bus);
+	if (i2c_read(chip, addr, 1, (u8 *)&valw, 1)) {
+		ret = -1;
+		goto error;
+	}
+	*data = valw;
+error:
+	i2c_set_bus_num(org_bus_num);
+	return ret;
+}
+
+static int usb3503_set_register (unsigned int bus, uchar chip, uint8_t addr, uint8_t data, int ms_timeout)
+{
+	int ret, tTimeout;
+	do {
+		u32 buf;		
+		uint8_t val = 0;		
+		ret = usb03503_reg_write(bus, chip, addr, 0, data);
+		if(ret != 0)
+			break;
+		udelay(1 * 1000);
+		tTimeout++;
+	} while (tTimeout < ms_timeout);
+	return ret;
+}
+
+//#ifdef __notdef
+static void usb3503_set_battery_charger (int on)
+{	
+	if(on){
+		usb3503_set_register(CONFIG_SYS_I2C_USB0_3503_BUS_NUM, CONFIG_SYS_I2C_USB0_3503_ADDR, 0xD0, (0x07 << 1), 10);
+		usb3503_set_register(CONFIG_SYS_I2C_USB1_3503_BUS_NUM, CONFIG_SYS_I2C_USB1_3503_ADDR, 0xD0, (0x07 << 1), 10);		
+	}	
+	else{
+		usb3503_set_register(CONFIG_SYS_I2C_USB0_3503_BUS_NUM, CONFIG_SYS_I2C_USB0_3503_ADDR, 0xD0, (~0x07 << 1), 10);
+		usb3503_set_register(CONFIG_SYS_I2C_USB1_3503_BUS_NUM, CONFIG_SYS_I2C_USB1_3503_ADDR, 0xD0, (~0x07 << 1), 10);		
+	}
+}
+// #endif
+
+
 int ehci_hcd_init(int index, struct ehci_hccr **hccr, struct ehci_hcor **hcor)
 {
 	int ret;
 	int auxclk;
 	int reg;
+	u8 val = 0;
+	int timeout = 0;
 	uint8_t device_mac[6];
 
 	enable_host_clocks();
-
+	
+	// printf("ehci_hcd_init (%d)\n", index);
+	
 	if (!getenv("usbethaddr")) {
 		reg = DIE_ID_REG_BASE + DIE_ID_REG_OFFSET;
 
@@ -176,12 +287,27 @@ int ehci_hcd_init(int index, struct ehci_hccr **hccr, struct ehci_hcor **hcor)
 	auxclk |= AUXCLK_ENABLE_MASK;
 	writel(auxclk, (*prcm)->scrm_auxclk1);
 
+	/* Enable LAN */ 
+	gpio_direction_output(CONFIG_OMAP_USBLAN_ENABLE_GPIO, 1);
+
 	ret = omap_ehci_hcd_init(&usbhs_bdata, hccr, hcor);
 	if (ret < 0) {
 		puts("Failed to initialize ehci\n");
 		return ret;
 	}
-
+	udelay(1 * 1000);
+	// Enable battery Charging -> SET PRTPWR Enabled on USB3503 hubs	
+	usb3503_set_battery_charger(1);
+#ifdef __notdef
+	usb3503_reg_read(CONFIG_SYS_I2C_USB0_3503_BUS_NUM, CONFIG_SYS_I2C_USB0_3503_ADDR, 0xE6, &val);
+	printf(">>>>>> 0xE6h OCS Val : 0x%x\n", val);
+	usb3503_reg_read(CONFIG_SYS_I2C_USB0_3503_BUS_NUM, CONFIG_SYS_I2C_USB0_3503_ADDR, 0xD0, &val);
+	printf(">>>>>> 0xD0h Battery Charging Val : 0x%x\n", val);
+	usb3503_reg_read(CONFIG_SYS_I2C_USB1_3503_BUS_NUM, CONFIG_SYS_I2C_USB1_3503_ADDR, 0xE6, &val);
+	printf(">>>>>> 0xE6h OCS Val : 0x%x\n", val);
+	usb3503_reg_read(CONFIG_SYS_I2C_USB1_3503_BUS_NUM, CONFIG_SYS_I2C_USB1_3503_ADDR, 0xD0, &val);
+	printf(">>>>>> 0xD0h Battery Charging Val : 0x%x\n", val);
+#endif	
 	return 0;
 }
 
@@ -194,12 +320,19 @@ int ehci_hcd_stop(void)
 }
 
 void usb_hub_reset_devices(int port)
-{
+{		
 	/* The LAN9730 needs to be reset after the port power has been set. */
+#ifdef __notdef	
 	if (port == 3) {
 		gpio_direction_output(CONFIG_OMAP_EHCI_PHY3_RESET_GPIO, 0);
 		udelay(10);
 		gpio_direction_output(CONFIG_OMAP_EHCI_PHY3_RESET_GPIO, 1);
 	}
+	if(port == 2) {
+		gpio_direction_output(CONFIG_OMAP_EHCI_PHY2_RESET_GPIO, 0);
+		udelay(10);
+		gpio_direction_output(CONFIG_OMAP_EHCI_PHY2_RESET_GPIO, 1);		
+	}
+#endif	
 }
 #endif

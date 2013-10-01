@@ -206,6 +206,16 @@ void emif_update_timings(u32 base, const struct emif_regs *regs)
 	}
 }
 
+static void ddr3_leveling_fast (u32 base, const struct emif_regs *regs)
+{
+	struct emif_reg_struct *emif = (struct emif_reg_struct *)base;
+	/* Launch Full leveling */
+	writel(DDR3_FULL_LVL, &emif->emif_rd_wr_lvl_ctl);
+
+	/* Wait till full leveling is complete */
+	while (readl(&emif->emif_rd_wr_lvl_ctl) & DDR3_FULL_LVL );	
+}
+
 static void ddr3_leveling(u32 base, const struct emif_regs *regs)
 {
 	struct emif_reg_struct *emif = (struct emif_reg_struct *)base;
@@ -233,19 +243,18 @@ static void ddr3_leveling(u32 base, const struct emif_regs *regs)
 	writel(DDR3_FULL_LVL, &emif->emif_rd_wr_lvl_ctl);
 
 	/* Wait till full leveling is complete */
-	readl(&emif->emif_rd_wr_lvl_ctl);
-	__udelay(130);
+	while (readl(&emif->emif_rd_wr_lvl_ctl) & DDR3_FULL_LVL );
 
 	/* Read data eye leveling no of samples */
 	config_data_eye_leveling_samples(base);
 
 	/* Launch 8 incremental WR_LVL- to compensate for PHY limitation */
 	writel(0x2 << EMIF_REG_WRLVLINC_INT_SHIFT, &emif->emif_rd_wr_lvl_ctl);
-	__udelay(130);
+	__udelay(160);
 
 	/* Launch Incremental leveling */
 	writel(DDR3_INC_LVL, &emif->emif_rd_wr_lvl_ctl);
-	__udelay(130);
+	__udelay(130);	
 }
 
 static void ddr3_sw_leveling(u32 base, const struct emif_regs *regs)
@@ -284,14 +293,14 @@ static void ddr3_init(u32 base, const struct emif_regs *regs)
 	writel(regs->read_idle_ctrl, &emif->emif_read_idlectrl);
 
 	do_ext_phy_settings(base, regs);
-
+	
 	/* enable leveling */
 	writel(regs->emif_rd_wr_lvl_rmp_ctl, &emif->emif_rd_wr_lvl_rmp_ctl);
 
-	if (omap_revision() == DRA752_ES1_0)
+	//if (omap_revision() == DRA752_ES1_0)
 		ddr3_sw_leveling(base, regs);
-	else
-		ddr3_leveling(base, regs);
+	//else
+		// ddr3_leveling(base, regs);
 }
 
 #ifndef CONFIG_SYS_EMIF_PRECALCULATED_TIMING_REGS
@@ -1073,21 +1082,21 @@ static void do_sdram_init(u32 base)
 	if (!(in_sdram || warm_reset())) {
 		if (emif_sdram_type() == EMIF_SDRAM_TYPE_LPDDR2)
 			lpddr2_init(base, regs);
-		else
+		else{
 			ddr3_init(base, regs);
+		}
 	}
 	if (warm_reset() && (emif_sdram_type() == EMIF_SDRAM_TYPE_DDR3)) {
 		set_lpmode_selfrefresh(base);
-		emif_reset_phy(base);
-		if (omap_revision() == DRA752_ES1_0)
+		emif_reset_phy(base);		
+		//if (omap_revision() == DRA752_ES1_0)
 			ddr3_sw_leveling(base, regs);
-		else
-			ddr3_leveling(base, regs);
+		//else
+			//ddr3_leveling(base, regs);
 	}
 
 	/* Write to the shadow registers */
 	emif_update_timings(base, regs);
-
 	debug("<<do_sdram_init() %x\n", base);
 }
 
@@ -1260,10 +1269,12 @@ void dmm_init(u32 base)
  * Doing (2) and not (1) makes sense - OPP change (when using CH)
  * Doing (1) and not (2) doen't make sense
  * See do_sdram_init() for the details
+ * OMAP5432 DDR3 clk = 531840000 hz
  */
 void sdram_init(void)
 {
 	u32 in_sdram, size_prog, size_detect;
+	const struct emif_regs *regs;
 	u32 sdram_type = emif_sdram_type();
 
 	debug(">>sdram_init()\n");
