@@ -69,7 +69,7 @@ int omap_sata_init(void)
 	writel(val, TI_SATA_WRAPPER_BASE + TI_SATA_SYSCONFIG);
 
 	ret = ahci_init(DWC_AHSATA_BASE);
-	scsi_scan(1);
-
+	// Initialize SCSI after omap_sata_init due this function is called from SPL and U-Boot
+	// scsi_scan(1);
 	return ret;
 }
