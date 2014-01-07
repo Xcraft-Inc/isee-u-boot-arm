@@ -1,15 +1,17 @@
 /*
  * (C) Copyright 2010
  * Texas Instruments, <www.ti.com>
+ * (C) Copyright 2013
+ * ISEE, <www.isee.biz>
  *
  * Aneesh V <aneesh@ti.com>
+ * Manel Caro <mcaro@iseebcn.com>
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
 #include <common.h>
 #include <spl.h>
 #include <asm/u-boot.h>
-// #include <mmc.h>
 #include <fat.h>
 #include <version.h>
 #include <image.h>
@@ -46,7 +48,7 @@ static int sata_load_image_raw(block_dev_desc_t *sata, unsigned long sector)
 end:
 #ifdef CONFIG_SPL_LIBCOMMON_SUPPORT
 	if (err == 0)
-		printf("spl: mmc blk read err - %lu\n", err);
+		printf("spl: SATA blk read err - %lu\n", err);
 #endif
 
 	return (err == 0);
@@ -60,7 +62,7 @@ static int sata_load_image_raw_os(block_dev_desc_t *sata)
 				       CONFIG_SYS_MMCSD_RAW_MODE_ARGS_SECTORS,
 				       (void *)CONFIG_SYS_SPL_ARGS_ADDR)) {
 #ifdef CONFIG_SPL_LIBCOMMON_SUPPORT
-		printf("mmc args blk read error\n");
+		printf("SATA args blk read error\n");
 #endif
 		return -1;
 	}
@@ -124,7 +126,8 @@ void spl_sata_load_image(void)
 	u32 boot_mode;
 
 	boot_mode = spl_boot_mode();
-	if (boot_mode == MMCSD_MODE_UNDEFINED) boot_mode = MMCSD_MODE_FAT;
+	if (boot_mode == MMCSD_MODE_UNDEFINED)
+		boot_mode = MMCSD_MODE_FAT;	/* If boot_mode is undefined then try with FAT */
 	if (boot_mode == MMCSD_MODE_RAW) {
 		debug("boot mode - RAW\n");
 #ifdef CONFIG_SPL_OS_BOOT
@@ -152,7 +155,7 @@ void spl_sata_load_image(void)
 #endif
 	} else {
 #ifdef CONFIG_SPL_LIBCOMMON_SUPPORT
-		puts("spl: wrong MMC boot mode\n");
+		puts("spl: wrong SATA boot mode\n");
 #endif
 		hang();
 	}
