@@ -9,3 +9,4 @@ ifdef CONFIG_USB_ETHER_ASIX
 obj-y += asix.o
 endif
 obj-$(CONFIG_USB_ETHER_SMSC95XX) += smsc95xx.o
+obj-$(CONFIG_USB_ETHER_SMSC75XX) += smsc75xx.o
