@@ -282,6 +282,17 @@ All other values are reserved.
 #define DMM_LISA_MAP2				(LISA_MAP_2_SYS_ADDR << 24) | (LISA_MAP_2_SYS_SIZE << 20) | (LISA_MAP_2_SDRC_INTL << 18) | \
 									(LISA_MAP_2_SDRC_ADDRSPC << 16) | (LISA_MAP_2_SDRC_MAP << 8) | LISA_MAP_2_SDRC_ADDR
 
+#define LISA_MAP_2_SYS_ADDR_1G 		0x80    /* SYS_ADDR: 0x80000000*/
+#define LISA_MAP_2_SYS_SIZE_1G		6       /* SYS_SIZE: 0x7: 2-GiB section */
+#define LISA_MAP_2_SDRC_INTL_1G		0       /* SDRC_INTL: 0x1: 128-byte interleaving */
+#define LISA_MAP_2_SDRC_ADDRSPC_1G	0       /* SDRC_ADDRSPC = 0x00000000 */
+#define LISA_MAP_2_SDRC_MAP_1G 		1       /* SDRC_MAP: 0x3: Mapped on EMIF1 and EMIF2 (interleaved) */
+#define LISA_MAP_2_SDRC_ADDR_1G		0x00    /* SDRC_ADDR = 0x00000000 */
+
+#define DMM_LISA_MAP2_1G			(LISA_MAP_2_SYS_ADDR_1G << 24) | (LISA_MAP_2_SYS_SIZE_1G << 20) | (LISA_MAP_2_SDRC_INTL_1G << 18) | \
+									(LISA_MAP_2_SDRC_ADDRSPC_1G << 16) | (LISA_MAP_2_SDRC_MAP_1G << 8) | LISA_MAP_2_SDRC_ADDR_1G
+
+
 #define LISA_MAP_3_SYS_ADDR 		0xFF    /* SYS_ADDR: 0xFF000000*/
 #define LISA_MAP_3_SYS_SIZE		    0       /* SYS_SIZE: 0x0: 16-MiB section */
 #define LISA_MAP_3_SDRC_INTL		0       /* SDRC_INTL: 0x0: No interleaving */

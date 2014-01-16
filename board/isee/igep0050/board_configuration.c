@@ -97,9 +97,10 @@ struct igepv5_eeprom_config igepv5_config = {
     .lisa_regs = {
         .dmm_lisa_map_0 = DMM_LISA_MAP0,
         .dmm_lisa_map_1 = DMM_LISA_MAP1,
-        .dmm_lisa_map_2 = DMM_LISA_MAP2,
+        .dmm_lisa_map_2 = DMM_LISA_MAP2,    /* DMM_LISA_MAP2 = 4 GiB (is_ma_hm_interleave=1), DMM_LISA_MAP2_1G = 2 GiB (is_ma_hm_interleave=0)*/
         .dmm_lisa_map_3 = DMM_LISA_MAP3,
-        .is_ma_present	= 0x1
+        .is_ma_present	= 0x1,
+        .is_ma_hm_interleave = 0x1,
     }
 };
 
