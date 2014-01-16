@@ -13,6 +13,7 @@
 #include <asm/processor.h>
 #include <scsi.h>
 #include <image.h>
+#include "spl_scsi.h"
 
 #ifdef CONFIG_SCSI_DEV_LIST
 #define SCSI_DEV_LIST CONFIG_SCSI_DEV_LIST
