@@ -1,9 +1,9 @@
 /*
- * (C) Copyright 2013
- * Texas Instruments Incorporated.
- * Sricharan R	  <r.sricharan@ti.com>
+ * (C) Copyright 2014
+ * ISEE 2007 SL
+ * Manel Caro	  <mcaro@iseebcn.com>
  *
- * Configuration settings for the TI EVM5430 board.
+ * Configuration settings for the IGEPv5 board.
  * See omap5_common.h for omap5 common settings.
  *
  * SPDX-License-Identifier:	GPL-2.0+
@@ -45,6 +45,11 @@
 #define CONFIG_CMD_TCA642X
 #define CONFIG_SYS_I2C_TCA642X_BUS_NUM 3
 #define CONFIG_SYS_I2C_TCA642X_ADDR 0x21
+
+/* eeprom board configuration */
+#define CONFIG_IGEPV5_CFG_EEPROM
+#define CONFIG_SYS_I2C_IGEPV5_CFG_BUS_NUM   0
+#define CONFIG_SYS_I2C_IGEPV5_CFG_BUS_ADDR  0x50
 
 /* USB UHH support options */
 #define CONFIG_CMD_USB
@@ -95,4 +100,4 @@
 #define CONFIG_SYS_SCSI_MAX_DEVICE	(CONFIG_SYS_SCSI_MAX_SCSI_ID * \
 						CONFIG_SYS_SCSI_MAX_LUN)
 
-#endif /* __CONFIG_OMAP5_EVM_H */
+#endif /* __CONFIG_IGEP0050_H */

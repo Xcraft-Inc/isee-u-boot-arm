@@ -1,8 +1,7 @@
 /*
- * (C) Copyright 2010
- * Texas Instruments Incorporated, <www.ti.com>
- * Aneesh V       <aneesh@ti.com>
- * Steve Sakoman  <steve@sakoman.com>
+ * (C) Copyright 2013
+ * ISEE 2007 SL
+ * Manel Caro     <mcaro@iseebcn.com>
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
@@ -11,6 +10,10 @@
 #include <asm/arch/sys_proto.h>
 #include <asm/arch/mmc_host_def.h>
 #include <tca642x.h>
+#include <asm/emif.h>
+#include <scsi.h>
+#include "board_configuration.h"
+#include "spl_scsi.h"
 
 #include "mux_data.h"
 
@@ -21,20 +24,19 @@
 #include <asm/arch/ehci.h>
 #include <asm/ehci-omap.h>
 #include <asm/arch/sata.h>
-
-#define DIE_ID_REG_BASE     (OMAP54XX_L4_CORE_BASE + 0x2000)
-#define DIE_ID_REG_OFFSET	0x200
-
 #endif
+
+#define PUSH_BUTTON_GPIO            118
+#define FACTORY_CONFIG_RESET_SEC    3
 
 DECLARE_GLOBAL_DATA_PTR;
 
 const struct omap_sysinfo sysinfo = {
-	"Board: OMAP5432 uEVM\n"
+	"Board: IGEPv5\n"
 };
 
 /**
- * @brief tca641x_init - uEVM default values for the GPIO expander
+ * @brief tca641x_init - IGEPv5 default values for the GPIO expander
  * input reg, output reg, polarity reg, configuration reg
  */
 struct tca642x_bank_info tca642x_init[] = {
@@ -47,6 +49,39 @@ struct tca642x_bank_info tca642x_init[] = {
 	  .polarity_reg = 0x00,
 	  .configuration_reg = 0x00 },
 };
+
+enum t_led_color { t_board_red, t_board_yellow, t_push_red, t_push_green, t_push_off };
+
+void set_user_button_leds (enum t_led_color color)
+{
+    switch(color){
+        case t_board_red:
+            tca642x_set_val(CONFIG_SYS_I2C_TCA642X_ADDR, 0, 2, 0);
+            break;
+        case t_board_yellow:
+            tca642x_set_val(CONFIG_SYS_I2C_TCA642X_ADDR, 0, 2, 1);
+            break;
+        case t_push_red:
+            tca642x_set_val(CONFIG_SYS_I2C_TCA642X_ADDR, 0, 8, 8);
+            tca642x_set_val(CONFIG_SYS_I2C_TCA642X_ADDR, 0, 4, 0);
+            break;
+        case t_push_green:
+            tca642x_set_val(CONFIG_SYS_I2C_TCA642X_ADDR, 0, 4, 4);
+            tca642x_set_val(CONFIG_SYS_I2C_TCA642X_ADDR, 0, 8, 0);
+            break;
+        case t_push_off:
+            tca642x_set_val(CONFIG_SYS_I2C_TCA642X_ADDR, 0, 0xC, 0);
+            tca642x_set_val(CONFIG_SYS_I2C_TCA642X_ADDR, 0, 0xC, 0);
+            break;
+    }
+}
+
+void init_user_leds (void)
+{
+    tca642x_set_dir(CONFIG_SYS_I2C_TCA642X_ADDR, 0 , 0xE, 0);
+    tca642x_set_val(CONFIG_SYS_I2C_TCA642X_ADDR, 0,  0xE, 0);
+}
+
 /**
  * @brief board_init
  *
@@ -57,9 +92,16 @@ int board_init(void)
 	gpmc_init();
 	gd->bd->bi_arch_number = MACH_TYPE_OMAP5_SEVM;
 	gd->bd->bi_boot_params = (0x80000000 + 0x100); /* boot param addr */
-
+    /* The initial State put the yellow color to on*/
 	tca642x_set_inital_state(CONFIG_SYS_I2C_TCA642X_ADDR, tca642x_init);
-
+	/* We off all leds, then only power supply led is on */
+	init_user_leds();
+	/* Now we put push button RED -> on */
+    set_user_button_leds(t_push_red);
+    /* Get Board Configuration from eeprom */
+    init_igepv5_board_configuration(0);
+    /* Show hello banner */
+    igepv5_print_banner();
 	return 0;
 }
 
@@ -79,9 +121,48 @@ void igepv5_spl_board_init (void)
 {
 #ifdef CONFIG_SPL_SATA_SUPPORT
 	omap_sata_init();
-	spl_scsi_scan(1);	
-#endif*/
+	spl_scsi_scan(1);
+#endif
 }
+
+#ifdef CONFIG_SPL_BUILD
+/* s_init - SPL */
+void board_s_init(void)
+{
+    int cfg_default = 0;
+    u32 count = 0;
+    while(gpio_get_value(PUSH_BUTTON_GPIO) == 0){
+        udelay(100000);
+        count++;
+        if(count == (FACTORY_CONFIG_RESET_SEC * 10)){
+            cfg_default = 1;
+            break;
+        }
+    }
+    if(cfg_default == 1){
+        printf("Factory Reset\n");
+    }
+    init_igepv5_board_configuration(cfg_default);
+}
+#endif
+
+#ifdef CONFIG_SYS_EMIF_PRECALCULATED_TIMING_REGS
+void emif_get_reg_dump(u32 emif_nr, const struct emif_regs **regs)
+{
+    if(emif_nr == 1)
+        *regs = get_emif_configuration( EMIF0 );
+    else
+        *regs = get_emif_configuration( EMIF1 );
+}
+
+void emif_get_dmm_regs(const struct dmm_lisa_map_regs
+						**dmm_lisa_regs)
+{
+    *dmm_lisa_regs = get_lisa_configuration();
+}
+#endif
+
+
 
 #if defined(CONFIG_USB_EHCI) || defined(CONFIG_USB_XHCI_OMAP)
 static void enable_host_clocks(void)
@@ -121,28 +202,12 @@ static void enable_host_clocks(void)
  */
 int misc_init_r(void)
 {
-	int reg;
-	uint8_t device_mac[6];
-
 #ifdef CONFIG_PALMAS_POWER
 	palmas_init_settings();
 #endif
 
 	if (!getenv("usbethaddr")) {
-		reg = DIE_ID_REG_BASE + DIE_ID_REG_OFFSET;
-
-		/*
-		 * create a fake MAC address from the processor ID code.
-		 * first byte is 0x02 to signify locally administered.
-		 */
-		device_mac[0] = 0x02;
-		device_mac[1] = readl(reg + 0x10) & 0xff;
-		device_mac[2] = readl(reg + 0xC) & 0xff;
-		device_mac[3] = readl(reg + 0x8) & 0xff;
-		device_mac[4] = readl(reg) & 0xff;
-		device_mac[5] = (readl(reg) >> 8) & 0xff;
-
-		eth_setenv_enetaddr("usbethaddr", device_mac);
+        eth_setenv_enetaddr("usbethaddr", getBoardMacAddr());
 	}
 
 	return 0;

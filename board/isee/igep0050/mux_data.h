@@ -1,8 +1,8 @@
 /*
- * (C) Copyright 2010
- * Texas Instruments Incorporated, <www.ti.com>
+ * (C) Copyright 2013
+ * ISEE 2007 SL
  *
- *	Sricharan R		<r.sricharan@ti.com>
+ *	Manel Caro <mcaro@iseebcn.com>
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
@@ -45,12 +45,12 @@ const struct pad_conf_entry core_padconf_array_essential[] = {
 	{I2C4_SCL, (IEN | M0)}, /* I2C5_SCL */
 	{I2C4_SDA, (IEN | M0)}, /* I2C5_SDA */
 	{I2C5_SCL, (IEN | M0)}, /* I2C5_SCL */
-	{I2C5_SDA, (IEN | M0)}, /* I2C5_SDA */	
+	{I2C5_SDA, (IEN | M0)}, /* I2C5_SDA */
 	{HSI2_ACWAKE, (PTU | M6)},    /*  HSI2_ACWAKE : GPMC_25 - USBH_nReset2, gpio3 79 */
-	{HSI2_CAFLAG, (PTU | M6)},    /*  HSI2_CAFLAG : USBH_nReset - gpio3 80*/ 
-	{HSI2_CAWAKE,  (PTU | M6)},    /* HSI2_CAWAKE : GPMC_24 - Lan Enable - gpio 78*/	
+	{HSI2_CAFLAG, (PTU | M6)},    /*  HSI2_CAFLAG : USBH_nReset - gpio3 80*/
+	{HSI2_CAWAKE,  (PTU | M6)},    /* HSI2_CAWAKE : GPMC_24 - Lan Enable - gpio 78*/
 	{C2C_DATA14, (PTU |IEN | M6)},    /*  C2C_DATA14 : GPMC 22 : GPIO4_119 msata_detect*/
-	/*{C2C_DATA15, (PTU | M6)},*/    /*  C2C_DATA15 : GPMC 23 : GPIO4_120 msata_1v8*/
+	{C2C_DATA13, (PTU |IEN | M6)},    /*  C2C_DATA14 : GPMC 21 : GPIO4_118 user button*/
 };
 
 const struct pad_conf_entry wkup_padconf_array_essential[] = {
@@ -296,4 +296,4 @@ const struct pad_conf_entry wkup_padconf_array_non_essential[] = {
 
 };
 
-#endif /* _EVM4430_MUX_DATA_H */
+#endif /* _IGEP0050_MUX_DATA_H */

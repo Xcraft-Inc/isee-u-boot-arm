@@ -149,6 +149,13 @@ void s_init(void)
 	do_io_settings();
 #endif
 	prcm_init();
+
+#ifdef CONFIG_SPL_BUILD
+#ifdef CONFIG_OMAP5_IGEPv5
+	board_s_init();
+#endif
+#endif
+
 #ifdef CONFIG_SPL_BUILD
 	/* For regular u-boot sdram_init() is called from dram_init() */
 	sdram_init();

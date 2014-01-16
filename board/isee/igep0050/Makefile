@@ -7,3 +7,4 @@
 
 obj-y	:= board.o
 obj-y += spl_scsi.o
+obj-y += board_configuration.o
