@@ -530,6 +530,7 @@
 
 /* Memory Adapter */
 #define MA_BASE				0x482AF040
+#define MA_PRIORITY         0x482A2000
 
 /* DMM_LISA_MAP */
 #define EMIF_SYS_ADDR_SHIFT		24

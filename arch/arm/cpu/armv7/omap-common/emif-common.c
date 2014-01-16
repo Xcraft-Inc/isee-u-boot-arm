@@ -1237,7 +1237,7 @@ void dmm_init(u32 base)
 	if (lisa_map_regs->is_ma_present) {
 		hw_lisa_map_regs =
 		    (struct dmm_lisa_map_regs *)MA_BASE;
-
+		    
 		writel(lisa_map_regs->dmm_lisa_map_3,
 			&hw_lisa_map_regs->dmm_lisa_map_3);
 		writel(lisa_map_regs->dmm_lisa_map_2,
@@ -1246,6 +1246,8 @@ void dmm_init(u32 base)
 			&hw_lisa_map_regs->dmm_lisa_map_1);
 		writel(lisa_map_regs->dmm_lisa_map_0,
 			&hw_lisa_map_regs->dmm_lisa_map_0);
+		/* MA_PRIORITY[8] HIMEM_INTERLEAVE_UN bit to 0x1 */
+        __raw_writel (__raw_readl(MA_PRIORITY) | (1 << 8) , MA_PRIORITY);
 	}
 
 	/*
@@ -1269,7 +1271,7 @@ void dmm_init(u32 base)
 			emif2_enabled = 1;
 		}
 	}
-
+	
 }
 
 static void do_bug0039_workaround(u32 base)
