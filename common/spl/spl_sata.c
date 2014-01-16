@@ -122,7 +122,7 @@ static int sata_load_image_fat_os(block_dev_desc_t *sata)
 void spl_sata_load_image(void)
 {
 	block_dev_desc_t *sata = spl_scsi_get_dev(0);
-	int err;
+	int err = 1;
 	u32 boot_mode;
 
 	boot_mode = spl_boot_mode();
