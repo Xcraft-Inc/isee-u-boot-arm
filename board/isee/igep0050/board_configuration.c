@@ -97,7 +97,7 @@ struct igepv5_eeprom_config igepv5_config = {
     .lisa_regs = {
         .dmm_lisa_map_0 = DMM_LISA_MAP0,
         .dmm_lisa_map_1 = DMM_LISA_MAP1,
-        .dmm_lisa_map_2 = DMM_LISA_MAP2,    /* DMM_LISA_MAP2 = 4 GiB (is_ma_hm_interleave=1), DMM_LISA_MAP2_1G = 2 GiB (is_ma_hm_interleave=0)*/
+        .dmm_lisa_map_2 = DMM_LISA_MAP2,    /* DMM_LISA_MAP2 = 4 GiB (is_ma_hm_interleave=1), DMM_LISA_MAP2_1G = 1 GiB (is_ma_hm_interleave=0)*/
         .dmm_lisa_map_3 = DMM_LISA_MAP3,
         .is_ma_present	= 0x1,
         .is_ma_hm_interleave = 0x1,
@@ -253,12 +253,25 @@ struct dmm_lisa_map_regs* get_lisa_configuration ()
 	return &igepv5_config.lisa_regs;
 }
 
+const char* get_memory_from_config (void)
+{
+    u32 reg = get_lisa_configuration()->dmm_lisa_map_2;
+    reg >>= 8;
+    reg &= 0x00000003;
+    if(reg == 1)
+        return "1GiB";
+    else if(reg == 3)
+        return "4GiB";
+    return "0GiB";
+}
+
 void igepv5_print_banner (void)
 {
-    printf("Board Name: %s (%s-%s) Rev: %s - Serial: %u Manufacturing date: %s\n", \
+    printf("Board Name: %s (%s-%s-%s) Rev: %s - Serial: %u Manufacturing date: %s\n", \
                                     igepv5_config.board_name, \
                                     igepv5_config.board_model, \
                                     igepv5_config.board_version, \
+                                    get_memory_from_config(), \
                                     igepv5_config.board_revision, \
                                     igepv5_config.board_serial_no, \
                                     igepv5_config.manf_date
