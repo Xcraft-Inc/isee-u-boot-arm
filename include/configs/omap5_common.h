@@ -88,6 +88,7 @@
 	"mmcroot=/dev/mmcblk0p2 rw\0" \
 	"mmcrootfstype=ext4 rootwait\0" \
 	"mmcargs=setenv bootargs console=${console} " \
+		"${kernel_mem} " \
 		"${optargs} " \
 		"vram=${vram} " \
 		"root=${mmcroot} " \
