@@ -21,6 +21,9 @@
 
 #define CONFIG_OMAP5_IGEPv5
 
+/* IGEPv5 Memory Configuration */
+#undef IGEPv5_MEMORY_4G		
+
 #define CONFIG_CONS_INDEX		3
 #define CONFIG_SYS_NS16550_COM3		UART3_BASE
 #define CONFIG_BAUDRATE			115200
