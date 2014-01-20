@@ -159,7 +159,7 @@ int check_magic (void)
     return (magic_id != IGEPv5_MAGIC_ID);
 }
 
-void set_factory_reset (void)
+void set_factory_defaults (void)
 {
     unsigned int reg;
 
@@ -175,7 +175,11 @@ void set_factory_reset (void)
     igepv5_config.device_mac[3] = readl(reg + 0x8) & 0xff;
     igepv5_config.device_mac[4] = readl(reg) & 0xff;
     igepv5_config.device_mac[5] = (readl(reg) >> 8) & 0xff;
+}
 
+void set_factory_reset (void)
+{    
+    set_factory_defaults();
     // Calculate crc32
     igepv5_config.crc32 = crc32(0, (const unsigned char*) &igepv5_config, sizeof(struct igepv5_eeprom_config));
     // Save Buffer in eeprom
@@ -203,6 +207,7 @@ void init_igepv5_board_configuration (int set_default)
     org_bus_num = i2c_get_bus_num();
 
     if(check_eeprom() != 0){
+	set_factory_defaults();
 	printf("eeprom not found, using defaults\n");
         goto error;
     }
@@ -215,6 +220,7 @@ void init_igepv5_board_configuration (int set_default)
     // Check eeprom magic
     if(check_magic() != 0) {
         /* use default configuration */
+	set_factory_defaults();
         printf("eeprom check magic failed, using defaults\n");
         goto error;
     }
@@ -291,4 +297,16 @@ void igepv5_print_banner (void)
 const unsigned char* getBoardMacAddr (void)
 {
     return igepv5_config.device_mac;
+}
+
+const char* getKernelMem (void)
+{
+    u32 reg = get_lisa_configuration()->dmm_lisa_map_2;
+    reg >>= 8;
+    reg &= 0x00000003;
+    if(reg == 1)
+        return "mem=1008M@0x80000000";
+    else if(reg == 3)
+        return "mem=2032M@0x80000000 mem=2048M@0x300000000";
+    return "";
 }

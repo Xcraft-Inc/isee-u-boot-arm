@@ -207,9 +207,9 @@ int misc_init_r(void)
 #endif
 
 	if (!getenv("usbethaddr")) {
-        eth_setenv_enetaddr("usbethaddr", getBoardMacAddr());
+        	eth_setenv_enetaddr("usbethaddr", getBoardMacAddr());
 	}
-
+	setenv("kernel_mem", getKernelMem());
 	return 0;
 }
 

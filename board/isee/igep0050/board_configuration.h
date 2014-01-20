@@ -10,7 +10,7 @@ struct dmm_lisa_map_regs* get_lisa_configuration (void);
 void igepv5_print_banner (void);
 const unsigned char* getBoardMacAddr (void);
 void init_igepv5_board_configuration (int set_default);
-
+const char* getKernelMem (void);
 
 
 
