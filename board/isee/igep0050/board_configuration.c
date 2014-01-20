@@ -188,7 +188,7 @@ int check_eeprom (void)
     i2c_init(CONFIG_SYS_OMAP24_I2C_SPEED, CONFIG_SYS_OMAP24_I2C_SLAVE);
 	/* Check if baseboard eeprom is available */
 	if (i2c_probe(CONFIG_SYS_I2C_IGEPV5_CFG_BUS_ADDR)) {
-		printf("Could not probe the EEPROM at 0x%x\n",
+		debug("Could not probe the EEPROM at 0x%x\n",
 		       CONFIG_SYS_I2C_IGEPV5_CFG_BUS_ADDR);
 		return -1;
 	}
@@ -203,6 +203,7 @@ void init_igepv5_board_configuration (int set_default)
     org_bus_num = i2c_get_bus_num();
 
     if(check_eeprom() != 0){
+	printf("eeprom not found, using defaults\n");
         goto error;
     }
 
