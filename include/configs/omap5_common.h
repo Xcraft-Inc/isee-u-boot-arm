@@ -75,7 +75,7 @@
 	"fdt_high=0xffffffff\0" \
 	"rdaddr=0x81000000\0" \
 	"console=" CONSOLEDEV ",115200n8\0" \
-	"fdtfile=undefined\0" \
+	"fdtfile=omap5-igep0050.dtb\0" \
 	"bootpart=0:2\0" \
 	"bootdir=/boot\0" \
 	"bootfile=zImage\0" \
@@ -83,21 +83,22 @@
 	"vram=16M\0" \
 	"partitions=" PARTS_DEFAULT "\0" \
 	"optargs=\0" \
+	"bootdev=mmc\0"\
 	"mmcdev=0\0" \
-	"mmcroot=/dev/mmcblk1p2 rw\0" \
+	"mmcroot=/dev/mmcblk0p2 rw\0" \
 	"mmcrootfstype=ext4 rootwait\0" \
 	"mmcargs=setenv bootargs console=${console} " \
 		"${optargs} " \
 		"vram=${vram} " \
 		"root=${mmcroot} " \
 		"rootfstype=${mmcrootfstype}\0" \
-	"loadbootscript=fatload mmc ${mmcdev} ${loadaddr} boot.scr\0" \
+	"loadbootscript=fatload ${bootdev} ${mmcdev} ${loadaddr} boot.scr\0" \
 	"bootscript=echo Running bootscript from mmc${mmcdev} ...; " \
 		"source ${loadaddr}\0" \
-	"loadbootenv=fatload mmc ${mmcdev} ${loadaddr} uEnv.txt\0" \
+	"loadbootenv=fatload ${bootdev} ${mmcdev} ${loadaddr} uEnv.txt\0" \
 	"importbootenv=echo Importing environment from mmc${mmcdev} ...; " \
 		"env import -t ${loadaddr} ${filesize}\0" \
-	"loadimage=load mmc ${bootpart} ${loadaddr} ${bootdir}/${bootfile}\0" \
+	"loadimage=load ${bootdev} ${bootpart} ${loadaddr} ${bootdir}/${bootfile}\0" \
 	"mmcboot=mmc dev ${mmcdev}; " \
 		"if mmc rescan; then " \
 			"echo SD/MMC found on device ${mmcdev};" \
@@ -116,23 +117,32 @@
 				"bootz ${loadaddr} - ${fdtaddr}; " \
 			"fi;" \
 		"fi;\0" \
-	"findfdt="\
-		"if test $board_name = omap5_uevm; then " \
-			"setenv fdtfile omap5-uevm.dtb; fi; " \
-		"if test $board_name = dra7xx; then " \
-			"setenv fdtfile dra7-evm.dtb; fi;" \
-		"if test $fdtfile = undefined; then " \
-			"echo WARNING: Could not determine device tree to use; fi; \0" \
-	"loadfdt=load mmc ${bootpart} ${fdtaddr} ${bootdir}/${fdtfile};\0" \
+	"scsiboot=if run loadbootenv; then " \
+			"echo Loaded environment from ${bootenv};" \
+			"run importbootenv;" \
+		"fi;" \
+		"if test -n $uenvcmd; then " \
+			"echo Running uenvcmd ...;" \
+			"run uenvcmd;" \
+		"fi;" \
+		"if run loadimage; then " \
+			"run loadfdt; " \
+			"echo Booting from scsi${mmcdev} ...; " \
+			"run mmcargs; " \
+			"bootz ${loadaddr} - ${fdtaddr}; " \
+		"fi;\0" \
+	"loadfdt=load ${bootdev} ${bootpart} ${fdtaddr} ${bootdir}/${fdtfile};\0" \
 
 #define CONFIG_BOOTCOMMAND \
-	"run findfdt; " \
 	"run mmcboot;" \
+	"setenv bootdev scsi;" \
+	"setenv mmcroot /dev/sda2 rw;" \
+	"run scsiboot;" \
+	"setenv bootdev mmc;" \
 	"setenv mmcdev 1; " \
 	"setenv bootpart 1:2; " \
-	"setenv mmcroot /dev/mmcblk0p2 rw; " \
+	"setenv mmcroot /dev/mmcblk1p2 rw; " \
 	"run mmcboot;" \
-
 
 /*
  * SPL related defines.  The Public RAM memory map the ROM defines the
