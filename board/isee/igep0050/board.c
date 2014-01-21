@@ -202,6 +202,7 @@ static void enable_host_clocks(void)
  */
 int misc_init_r(void)
 {
+	char vMacAddress [30];
 #ifdef CONFIG_PALMAS_POWER
 	palmas_init_settings();
 #endif
@@ -209,6 +210,14 @@ int misc_init_r(void)
 	if (!getenv("usbethaddr")) {
         	eth_setenv_enetaddr("usbethaddr", getBoardMacAddr());
 	}
+	// eth_setenv_enetaddr("mac_addr", getBoardMacAddr());
+	sprintf(vMacAddress, "0x%x,0x%x,0x%x,0x%x,0x%x,0x%x", getBoardMacAddr()[0], \
+							      getBoardMacAddr()[1], \
+							      getBoardMacAddr()[2], \
+							      getBoardMacAddr()[3], \
+							      getBoardMacAddr()[4], \
+							      getBoardMacAddr()[5]);
+	setenv("mac_addr", vMacAddress);
 	setenv("kernel_mem", getKernelMem());
 	return 0;
 }

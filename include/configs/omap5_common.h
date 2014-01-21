@@ -89,6 +89,7 @@
 	"mmcrootfstype=ext4 rootwait\0" \
 	"mmcargs=setenv bootargs console=${console} " \
 		"${kernel_mem} " \
+		"smsc75xx.mac=${mac_addr} " \
 		"${optargs} " \
 		"vram=${vram} " \
 		"root=${mmcroot} " \
