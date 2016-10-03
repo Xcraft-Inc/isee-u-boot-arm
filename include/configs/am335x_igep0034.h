@@ -31,7 +31,7 @@
 #if defined(CONFIG_LITE)
 #define CONFIG_DEFAULT_FDT_FILE "am335x-igep-base0040-lite.dtb"
 #elif defined(CONFIG_FULL)
-#define CONFIG_DEFAULT_FDT_FILE "am335x-igep-base0040-full.dtb"
+#define CONFIG_DEFAULT_FDT_FILE "am335x-igep-base0040.dtb"
 #endif
 
 /* Make the verbose messages from UBI stop printing */
