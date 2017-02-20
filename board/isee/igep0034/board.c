@@ -23,23 +23,54 @@
 #include <i2c.h>
 #include <miiphy.h>
 #include <cpsw.h>
+#include <environment.h>
 #include "board.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
+/* GPIO0_26 used to read board version and control LED module red.
+ * When this pin is configured as input, U-boot can detect board revision:
+ * IGEP0034-LITE = 0
+ * IGEP0034 (FULL) = 1
+ */
+#define GPIO_RED_VERSION	26
+
 static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
 
+/*
+ * Routine: get_board_revision
+ * Description: Returns the board revision
+ */
+static int get_board_revision(void)
+{
+	int revision;
+
+	gpio_request(GPIO_RED_VERSION, "red_version");
+	gpio_direction_input(GPIO_RED_VERSION);
+	revision = gpio_get_value(GPIO_RED_VERSION);
+	gpio_free(GPIO_RED_VERSION);
+
+	return revision;
+}
+
 #ifdef CONFIG_SPL_BUILD
-#ifdef CONFIG_SDRAM_H5TQ4G63AFR
+
 /* PN H5TQ4G63AFR is equivalent to MT41K256M16HA125*/
-static const struct ddr_data ddr3_data = {
+static const struct ddr_data ddr3_igep0034_data = {
 	.datardsratio0 = MT41K256M16HA125E_RD_DQS,
 	.datawdsratio0 = MT41K256M16HA125E_WR_DQS,
 	.datafwsratio0 = MT41K256M16HA125E_PHY_FIFO_WE,
 	.datawrsratio0 = MT41K256M16HA125E_PHY_WR_DATA,
 };
 
-static const struct cmd_control ddr3_cmd_ctrl_data = {
+static const struct ddr_data ddr3_igep0034_lite_data = {
+	.datardsratio0 = K4B2G1646EBIH9_RD_DQS,
+	.datawdsratio0 = K4B2G1646EBIH9_WR_DQS,
+	.datafwsratio0 = K4B2G1646EBIH9_PHY_FIFO_WE,
+	.datawrsratio0 = K4B2G1646EBIH9_PHY_WR_DATA,
+};
+
+static const struct cmd_control ddr3_igep0034_cmd_ctrl_data = {
 	.cmd0csratio = MT41K256M16HA125E_RATIO,
 	.cmd0iclkout = MT41K256M16HA125E_INVERT_CLKOUT,
 
@@ -50,32 +81,7 @@ static const struct cmd_control ddr3_cmd_ctrl_data = {
 	.cmd2iclkout = MT41K256M16HA125E_INVERT_CLKOUT,
 };
 
-static struct emif_regs ddr3_emif_reg_data = {
-	.sdram_config = MT41K256M16HA125E_EMIF_SDCFG,
-	.ref_ctrl = MT41K256M16HA125E_EMIF_SDREF,
-	.sdram_tim1 = MT41K256M16HA125E_EMIF_TIM1,
-	.sdram_tim2 = MT41K256M16HA125E_EMIF_TIM2,
-	.sdram_tim3 = MT41K256M16HA125E_EMIF_TIM3,
-	.zq_config = MT41K256M16HA125E_ZQ_CFG,
-	.emif_ddr_phy_ctlr_1 = MT41K256M16HA125E_EMIF_READ_LATENCY,
-};
-
-const struct ctrl_ioregs ioregs = {
-	.cm0ioctl		= MT41K256M16HA125E_IOCTRL_VALUE,
-	.cm1ioctl		= MT41K256M16HA125E_IOCTRL_VALUE,
-	.cm2ioctl		= MT41K256M16HA125E_IOCTRL_VALUE,
-	.dt0ioctl		= MT41K256M16HA125E_IOCTRL_VALUE,
-	.dt1ioctl		= MT41K256M16HA125E_IOCTRL_VALUE,
-};
-#elif CONFIG_SDRAM_K4B2G1646EBIH9
-static const struct ddr_data ddr3_data = {
-	.datardsratio0 = K4B2G1646EBIH9_RD_DQS,
-	.datawdsratio0 = K4B2G1646EBIH9_WR_DQS,
-	.datafwsratio0 = K4B2G1646EBIH9_PHY_FIFO_WE,
-	.datawrsratio0 = K4B2G1646EBIH9_PHY_WR_DATA,
-};
-
-static const struct cmd_control ddr3_cmd_ctrl_data = {
+static const struct cmd_control ddr3_igep0034_lite_cmd_ctrl_data = {
 	.cmd0csratio = K4B2G1646EBIH9_RATIO,
 	.cmd0iclkout = K4B2G1646EBIH9_INVERT_CLKOUT,
 
@@ -86,7 +92,17 @@ static const struct cmd_control ddr3_cmd_ctrl_data = {
 	.cmd2iclkout = K4B2G1646EBIH9_INVERT_CLKOUT,
 };
 
-static struct emif_regs ddr3_emif_reg_data = {
+static struct emif_regs ddr3_igep0034_emif_reg_data = {
+	.sdram_config = MT41K256M16HA125E_EMIF_SDCFG,
+	.ref_ctrl = MT41K256M16HA125E_EMIF_SDREF,
+	.sdram_tim1 = MT41K256M16HA125E_EMIF_TIM1,
+	.sdram_tim2 = MT41K256M16HA125E_EMIF_TIM2,
+	.sdram_tim3 = MT41K256M16HA125E_EMIF_TIM3,
+	.zq_config = MT41K256M16HA125E_ZQ_CFG,
+	.emif_ddr_phy_ctlr_1 = MT41K256M16HA125E_EMIF_READ_LATENCY,
+};
+
+static struct emif_regs ddr3_igep0034_lite_emif_reg_data = {
 	.sdram_config = K4B2G1646EBIH9_EMIF_SDCFG,
 	.ref_ctrl = K4B2G1646EBIH9_EMIF_SDREF,
 	.sdram_tim1 = K4B2G1646EBIH9_EMIF_TIM1,
@@ -96,14 +112,21 @@ static struct emif_regs ddr3_emif_reg_data = {
 	.emif_ddr_phy_ctlr_1 = K4B2G1646EBIH9_EMIF_READ_LATENCY,
 };
 
-const struct ctrl_ioregs ioregs = {
+const struct ctrl_ioregs ioregs_igep0034 = {
+	.cm0ioctl		= MT41K256M16HA125E_IOCTRL_VALUE,
+	.cm1ioctl		= MT41K256M16HA125E_IOCTRL_VALUE,
+	.cm2ioctl		= MT41K256M16HA125E_IOCTRL_VALUE,
+	.dt0ioctl		= MT41K256M16HA125E_IOCTRL_VALUE,
+	.dt1ioctl		= MT41K256M16HA125E_IOCTRL_VALUE,
+};
+
+const struct ctrl_ioregs ioregs_igep0034_lite = {
 	.cm0ioctl		= K4B2G1646EBIH9_IOCTRL_VALUE,
 	.cm1ioctl		= K4B2G1646EBIH9_IOCTRL_VALUE,
 	.cm2ioctl		= K4B2G1646EBIH9_IOCTRL_VALUE,
 	.dt0ioctl		= K4B2G1646EBIH9_IOCTRL_VALUE,
 	.dt1ioctl		= K4B2G1646EBIH9_IOCTRL_VALUE,
 };
-#endif
 
 #define OSC    (V_OSCK/1000000)
 const struct dpll_params dpll_ddr = {
@@ -126,8 +149,12 @@ void set_mux_conf_regs(void)
 
 void sdram_init(void)
 {
-	config_ddr(400, &ioregs, &ddr3_data,
-		   &ddr3_cmd_ctrl_data, &ddr3_emif_reg_data, 0);
+	if (get_board_revision())
+		config_ddr(400, &ioregs_igep0034, &ddr3_igep0034_data,
+			&ddr3_igep0034_cmd_ctrl_data, &ddr3_igep0034_emif_reg_data, 0);
+	else
+		config_ddr(400, &ioregs_igep0034_lite, &ddr3_igep0034_lite_data,
+			&ddr3_igep0034_lite_cmd_ctrl_data, &ddr3_igep0034_lite_emif_reg_data, 0);
 }
 #endif
 
@@ -142,6 +169,19 @@ int board_init(void)
 
 	return 0;
 }
+
+#ifdef CONFIG_BOARD_LATE_INIT
+int board_late_init(void)
+{
+#ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
+	if (get_board_revision())
+		setenv("board_name", "igep0034");
+	else
+		setenv("board_name", "igep0034-lite");
+#endif
+	return 0;
+}
+#endif
 
 #if defined(CONFIG_DRIVER_TI_CPSW)
 static void cpsw_control(int enabled)

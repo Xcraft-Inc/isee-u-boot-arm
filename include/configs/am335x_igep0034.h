@@ -20,19 +20,14 @@
 /* Mach type */
 #define MACH_TYPE_IGEP0034		4521	/* Until the next sync */
 #define CONFIG_MACH_TYPE		MACH_TYPE_IGEP0034
+#define CONFIG_BOARD_LATE_INIT
+
 
 /* Clock defines */
 #define V_OSCK				24000000  /* Clock output from T2 */
 #define V_SCLK				(V_OSCK)
 
 #define CONFIG_ENV_SIZE			(128 << 10)	/* 128 KiB */
-
-/* Module specific Configs */
-#if defined(CONFIG_LITE)
-#define CONFIG_DEFAULT_FDT_FILE "am335x-igep-base0040-lite.dtb"
-#elif defined(CONFIG_FULL)
-#define CONFIG_DEFAULT_FDT_FILE "am335x-igep-base0040.dtb"
-#endif
 
 /* Make the verbose messages from UBI stop printing */
 #define CONFIG_UBI_SILENCE_MSG
@@ -45,7 +40,7 @@
 	DEFAULT_LINUX_BOOT_ENV \
 	"bootdir=/boot\0" \
 	"bootfile=zImage\0" \
-	"dtbfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
+	"dtbfile=undefined\0" \
 	"console=ttyO0,115200n8\0" \
 	"mmcdev=0\0" \
 	"mmcroot=/dev/mmcblk0p2 rw\0" \
@@ -100,10 +95,18 @@
 	"netboot=echo Booting from net ...; " \
 		"run netargs; " \
 		"run netload; " \
-		"bootz ${loadaddr} - ${fdtaddr} \0"
+		"bootz ${loadaddr} - ${fdtaddr} \0" \
+	"finddtb="\
+		"if test $board_name = igep0034; then " \
+			"setenv dtbfile am335x-igep-base0040.dtb; fi; " \
+		"if test $board_name = igep0034-lite; then " \
+			"setenv dtbfile am335x-igep-base0040-lite.dtb; fi; " \
+		"if test $dtbfile = undefined; then " \
+			"echo WARNING: Could not determine device tree to use; fi; \0"
 #endif
 
 #define CONFIG_BOOTCOMMAND \
+	"run finddtb;" \
 	"run mmcboot;" \
 	"run nandboot;" \
 	"run netboot;"
