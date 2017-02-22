@@ -69,6 +69,12 @@ static struct module_pin_mux rmii1_pin_mux[] = {
 	{-1},
 };
 
+static struct module_pin_mux gpio_pin_mux[] = {
+	{OFFSET(gpmc_ad10), (MODE(7) | RXACTIVE | PULLUP_EN)},	/* GPIO0_26 */
+	{OFFSET(gpmc_ad11), (MODE(7) | RXACTIVE | PULLUP_EN)},	/* GPIO0_27 */
+	{-1},
+};
+
 void enable_uart0_pin_mux(void)
 {
 	configure_module_pin_mux(uart0_pin_mux);
@@ -85,4 +91,6 @@ void enable_board_pin_mux(void)
 	configure_module_pin_mux(mmc0_pin_mux);
 	/* Ethernet pinmux. */
 	configure_module_pin_mux(rmii1_pin_mux);
+	/* GPIO pinmux. */
+	configure_module_pin_mux(gpio_pin_mux);
 }
