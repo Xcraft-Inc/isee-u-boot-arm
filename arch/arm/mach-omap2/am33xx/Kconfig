@@ -44,6 +44,12 @@ config TARGET_AM335X_BALTOS
 	select DM_SERIAL
 	select DM_GPIO
 
+config TARGET_AM335X_IGEP0034
+	bool "Support am335x_igep0034"
+	select DM
+	select DM_SERIAL
+	select DM_GPIO
+
 config TARGET_AM335X_IGEP0033
 	bool "Support am335x_igep0033"
 	select DM

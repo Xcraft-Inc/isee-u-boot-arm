@@ -1,0 +1,9 @@
+IGEP0034 BOARD
+M:	Eduard Gavin <egavin@iseebcn.com>
+M:	Josep Orga <jorga@iseebcn.com>
+M:	Pau Pajuelo <ppajuelo@iseebcn.com
+S:	Maintained
+F:	board/isee/igep0034/
+F:	include/configs/am335x_igep0034.h
+F:	configs/am335x_igep0034_lite_defconfig
+F:	configs/am335x_igep0034_full_defconfig
