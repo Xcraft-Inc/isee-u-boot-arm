@@ -23,11 +23,23 @@
 #include <i2c.h>
 #include <miiphy.h>
 #include <cpsw.h>
+#include "eeprom.h"
+#include "../common/igep_common.h"
 #include "board.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
 static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
+
+static struct igep_mf_setup igep0034_eeprom_config;
+
+static struct igep_mf_setup igep0034_eeprom_config_initial = {
+	 .crc32 = 0,              				/* eeprom crc32 */
+     .bmac0 = "b0:d5:cc:26:ff:c3"           /* MAC 0 - default */
+    
+};
+
+int igep_eeprom_valid;
 
 #ifdef CONFIG_SPL_BUILD /* SPL */
 
@@ -117,6 +129,7 @@ const struct dpll_params *get_dpll_ddr_params(void)
 	return &dpll_ddr;
 }
 
+
 void set_uart_mux_conf(void)
 {
 	enable_uart0_pin_mux();
@@ -180,6 +193,10 @@ err_free_gpio:
  */
 int board_init(void)
 {
+	u32 crc_value0 = 0;
+	u32 crc_value = 0;
+    u32 crc_save_value = 0;
+       
 	gd->bd->bi_boot_params = CONFIG_SYS_SDRAM_BASE + 0x100;
 /*
 #if !defined(CONFIG_SPL_BUILD) || \
@@ -189,13 +206,45 @@ int board_init(void)
 #endif
 */
 	gpmc_init();
-
+	
 	REQUEST_AND_CLR_GPIO(GPIO_RED_LED);
 	REQUEST_AND_SET_GPIO(GPIO_GREEN_LED);
 
 	gpio_set_value(GPIO_RED_LED, 0);
 	gpio_set_value(GPIO_GREEN_LED, 1);
+	
+		
+	if(check_eeprom() != 0){
+		printf("eeprom: not found\n");
+		}
+	else{
+		
+		crc_value0 = crc32(0, (const unsigned char*) &igep0034_eeprom_config_initial, sizeof(struct igep_mf_setup));
+		
+		igep0034_eeprom_config_initial.crc32 = crc_value0;
+		
+		if(eeprom_write_setup(0, (char*) &igep0034_eeprom_config_initial, sizeof(struct igep_mf_setup))){
+			       printf("eeprom: write fail\n");
 
+		}
+        /* Read configuration from eeprom */
+        if(eeprom_read_setup(0, (char*) &igep0034_eeprom_config, sizeof(struct igep_mf_setup))){
+                   printf("eeprom: read fail\n");
+    }       
+       
+       
+       /* Verify crc32 */
+            crc_save_value = igep0034_eeprom_config.crc32;
+            igep0034_eeprom_config.crc32 = 0;
+            crc_value = crc32(0, (const unsigned char*) &igep0034_eeprom_config, sizeof(struct igep_mf_setup));
+            if(crc_save_value != crc_value){
+                printf("eeprom: crc32 failed. Loading mac from environment\n");
+                         
+        }else{
+                   printf("eeprom: crc32 OK! Loading mac from eeprom\n");                  
+                   igep_eeprom_valid = 1;
+        }
+    }
 	return 0;
 }
 
@@ -234,6 +283,7 @@ static struct cpsw_platform_data cpsw_data = {
 	.host_port_num		= 0,
 	.version			= CPSW_CTRL_VERSION_2,
 };
+
 
 int board_eth_init(bd_t *bis)
 {

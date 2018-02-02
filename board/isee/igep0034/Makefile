@@ -10,4 +10,6 @@ ifdef CONFIG_SPL_BUILD
 obj-y	+= mux.o
 endif
 
-obj-y	+= board.o
+obj-y += eeprom.o
+
+obj-y += board.o
