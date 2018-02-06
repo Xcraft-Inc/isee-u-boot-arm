@@ -84,6 +84,14 @@ static struct module_pin_mux i2c1_pin_mux[] = {
 	{-1},
 }; 
 
+static struct module_pin_mux i2c2_pin_mux[] = {
+	{OFFSET(uart1_ctsn), (MODE(3) | RXACTIVE |
+			PULLUDEN | SLEWCTRL)},	 /* I2C_DATA */
+	{OFFSET(uart1_rtsn), (MODE(3) | RXACTIVE |
+			PULLUDEN | SLEWCTRL)},	 /* I2C_SCLK */
+	{-1},
+}; 
+
 void enable_uart0_pin_mux(void)
 {
 	configure_module_pin_mux(uart0_pin_mux);	
@@ -103,8 +111,9 @@ void enable_board_pin_mux(void)
 	configure_module_pin_mux(mmc0_pin_mux);
 	/* Ethernet pinmux. */
 	configure_module_pin_mux(rmii1_pin_mux);
-	
+	/* I2C pinmux. */
 	configure_module_pin_mux(i2c1_pin_mux);
+	configure_module_pin_mux(i2c2_pin_mux);
 	
 }
 

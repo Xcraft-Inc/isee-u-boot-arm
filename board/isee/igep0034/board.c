@@ -25,6 +25,7 @@
 #include <cpsw.h>
 #include "eeprom.h"
 #include "../common/igep_common.h"
+#include <power/tps65910.h>
 #include "board.h"
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -213,6 +214,8 @@ int board_init(void)
 	gpio_set_value(GPIO_RED_LED, 0);
 	gpio_set_value(GPIO_GREEN_LED, 1);
 	
+	i2c_set_bus_num(1);
+	i2c_probe(TPS65910_CTRL_I2C_ADDR);	
 		
 	if(check_eeprom() != 0){
 		printf("eeprom: not found\n");

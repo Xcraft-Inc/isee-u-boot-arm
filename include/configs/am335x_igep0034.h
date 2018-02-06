@@ -102,13 +102,13 @@
 #define CONFIG_CONS_INDEX		1
 #define CONFIG_BAUDRATE			115200
 
+
+/* PMIC support */
+#define CONFIG_POWER_TPS65910
+
 /* Ethernet support */
 #define CONFIG_PHYLIB
 #define CONFIG_PHY_SMSC
-
-/* I2C support */
-/*#define CONFIG_SYS_OMAP24_I2C_SPEED	100000
-#define CONFIG_SYS_OMAP24_I2C_SLAVE	1 */
 
 /* EEPROM support */
 #define CONFIG_SYS_I2C_EEPROM_BUS 1 		/* Numero de Bus i2C donde esta la eeprom conectada al chip */
