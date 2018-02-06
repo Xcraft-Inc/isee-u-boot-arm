@@ -90,12 +90,33 @@
 	"nandboot=echo Booting from nand ...; " \
 		"run nandargs; " \
 		"run nandload; " \
-		"bootz ${loadaddr} - ${fdtaddr} \0"
+		"bootz ${loadaddr} - ${fdtaddr} \0" \
+	"netload=tftpboot ${loadaddr} ${bootfile}; " \
+		"tftpboot ${fdtaddr} ${dtbfile} \0" \
+	"netargs=setenv bootargs console=${console} " \
+		"${optargs} " \
+		"root=/dev/nfs " \
+		"ip=${ipaddr} nfsroot=${serverip}:${rootnfs},v3,tcp \0" \
+	"netboot=echo Booting from net ...; " \
+		"run netargs; " \
+		"run netload; " \
+		"bootz ${loadaddr} - ${fdtaddr} \0" \
+	"finddtb="\
+		"if test $board_name = igep0034; then " \
+			"setenv dtbfile am335x-igep-base0040.dtb; fi; " \
+		"if test $board_name = igep0034-lite; then " \
+			"setenv dtbfile am335x-igep-base0040-lite.dtb; fi; " \
+		"if test $dtbfile = undefined; then " \
+			"echo WARNING: Could not determine device tree to use; fi; \0"
+
+
 #endif
 
 #define CONFIG_BOOTCOMMAND \
+	"run finddtb;" \
 	"run mmcboot;" \
-	"run nandboot;"
+	"run nandboot;"\
+	"run netboot;"
 
 /* NS16550 Configuration */
 #define CONFIG_SYS_NS16550_COM1		0x44e09000	/* UART0 */
