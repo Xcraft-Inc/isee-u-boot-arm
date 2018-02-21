@@ -248,9 +248,11 @@ int board_init(void)
                    igep_eeprom_valid = 1;
         }
     }
+   	/*Set GPIO_CKSYNC of the TPS65910 to OUTPUT HIGH*/
+    char* data = "0x0f";
+    tps65910_i2c_write(0x00000060, (uint8_t*)data);
 	return 0;
 }
-
 #if defined(CONFIG_DRIVER_TI_CPSW)
 static void cpsw_control(int enabled)
 {
