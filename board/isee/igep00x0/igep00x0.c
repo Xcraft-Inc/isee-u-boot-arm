@@ -27,7 +27,14 @@
 #include <fdt_support.h>
 #include "igep00x0.h"
 
+#include "eeprom.h"
+#include "../common/igep_common.h"
+
 DECLARE_GLOBAL_DATA_PTR;
+
+const uchar igep_mac0 [6] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0xff };
+static int igep_eeprom_valid = 0;
+static struct igep_mf_setup igep00x0_eeprom_config;
 
 static const struct ns16550_platdata igep_serial = {
 	.base = OMAP34XX_UART3,
@@ -41,6 +48,13 @@ U_BOOT_DEVICE(igep_uart) = {
 	&igep_serial
 };
 
+const uchar* get_mac_address (void)
+{
+	if(igep_eeprom_valid)
+		return igep00x0_eeprom_config.bmac0;
+	return igep_mac0;
+}
+
 /*
  * Routine: board_init
  * Description: Early hardware init.
@@ -48,6 +62,8 @@ U_BOOT_DEVICE(igep_uart) = {
 int board_init(void)
 {
 	int loops = 100;
+	u32 crc_value = 0;
+    u32 crc_save_value = 0;
 
 	/* find out flash memory type, assume NAND first */
 	gpmc_cs0_flash = MTD_DEV_TYPE_NAND;
@@ -72,6 +88,26 @@ int board_init(void)
 #if defined(CONFIG_LED_STATUS) && defined(CONFIG_LED_STATUS_BOOT_ENABLE)
 	status_led_set(CONFIG_LED_STATUS_BOOT, CONFIG_LED_STATUS_ON);
 #endif
+	
+	if(check_eeprom() != 0){
+		printf("eeprom: not found\n");
+		}
+	else{
+		/* Read configuration from eeprom */
+		if(eeprom_read_setup(0, (char*) &igep00x0_eeprom_config, sizeof(struct igep_mf_setup)))
+	  	printf("EEPROM: read fail\n");	
+		/* Verify crc32 */
+	   	crc_save_value = igep00x0_eeprom_config.crc32;
+    	igep00x0_eeprom_config.crc32 = 0;
+	  	printf("bmac0: %s \n",igep00x0_eeprom_config.bmac0);
+	   	crc_value = crc32(0, (const unsigned char*) &igep00x0_eeprom_config, sizeof(struct igep_mf_setup));
+		if(crc_save_value != crc_value){
+       	printf("EEPROM: CRC32 failed. Loading default MAC\n");				
+		}else{
+	    printf("EEPROM: CRC32 OK! Loading MAC from eeprom\n");	       		
+	  	igep_eeprom_valid = 1;
+		}
+    }
 
 	return 0;
 }
@@ -189,6 +225,7 @@ static void setup_net_chip(void)
 
 int board_eth_init(bd_t *bis)
 {
+	eth_setenv_enetaddr("ethaddr", get_mac_address());
 #ifdef CONFIG_SMC911X
 	return smc911x_initialize(0, CONFIG_SMC911X_BASE);
 #else
@@ -240,6 +277,16 @@ void set_fdt(void)
 	}
 }
 
+void reset_usb_host_t(void){
+
+	if (!gpio_request(24, "usbh nrst")) {
+		gpio_set_value(24, 0);
+		mdelay(2);
+		gpio_set_value(24, 1);
+		mdelay(2);
+	}
+}
+
 /*
  * Routine: misc_init_r
  * Description: Configure board specific parts
@@ -248,11 +295,18 @@ int misc_init_r(void)
 {
 	twl4030_power_init();
 
+	twl4030_led_init(TWL4030_LED_LEDEN_LEDAON | TWL4030_LED_LEDEN_LEDBON);
+
 	setup_net_chip();
+
+	reset_usb_host_t();
 
 	omap_die_id_display();
 
 	set_fdt();
+
+
+
 
 	return 0;
 }
