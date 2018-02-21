@@ -134,12 +134,14 @@
 				"bootz ${loadaddr} - ${fdtaddr};" \
 			"fi;" \
 		"fi;\0" \
+	"ubiroot=ubi0:rootfs rw rootwait\0" \
+	"ubirootfstype=ubifs rootwait fixrt\0" \
+	"ubimtd=3,512\0" \
 	"ubinandargs=setenv bootargs ${bootargs} mpurate=800 " \
 		"ubi.mtd=${ubimtd} rootfstype=${ubirootfstype} root=${ubiroot} ${optargs}\0" \
 	"loadbootenv_nand=ubifsload ${loadaddr} ${bootfile}\0" \
 	"nandboot= echo Trying to boot from NAND; " \
-		"echo Trying UBIFS;" \
-		"if ubi part kernel; then " \
+		"ubi part kernel; " \
 			"ubifsmount ubi0:kernelfs; "\
 			"run loadbootenv_nand; "\
 			"run importbootenv;" \
@@ -147,8 +149,6 @@
 			"run loadubizimage; "\
 			"run ubinandargs; "\
 			"bootz ${loadaddr} - ${fdtaddr}\0" \
-		"fi;" \
-		"echo Could not load from UBIFS;\0" \
 	"netload=tftpboot ${loadaddr} ${bootfile}; " \
 		"tftpboot ${fdtaddr} ${fdtfile} \0" \
 	"netargs=setenv bootargs console=${console} " \
