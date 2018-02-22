@@ -11,6 +11,9 @@
  * GNU General Public License for more details.
  */
 
+/*DEFINE IT TO SET OTG AS HOST (USB1 will be unused)*/
+/*#define OTG_AS_HOST*/
+
 #ifndef __CONFIG_IGEP0034_H
 #define __CONFIG_IGEP0034_H
 
@@ -196,7 +199,19 @@
 #define CONFIG_ARCH_MISC_INIT
 #define CONFIG_USB_MUSB_PIO_ONLY
 #define CONFIG_USB_MUSB_DISABLE_BULK_COMBINE_SPLIT
+/*When modify uboot config to set USB0 to host mode, you also have to set USB1 
+ *to peripheral mode. In uboot only ONE USB port is allowed to be in host mode*/
+#if CONFIG_OTG_AS_HOST	/*USB1 as HOST*/				 
+#define CONFIG_AM335X_USB1
+#define CONFIG_AM335X_USB1_MODE MUSB_PERIPHERAL
+#define CONFIG_AM335X_USB0
+#define CONFIG_AM335X_USB0_MODE MUSB_HOST
+#else
 #define CONFIG_AM335X_USB1
 #define CONFIG_AM335X_USB1_MODE MUSB_HOST
+#define CONFIG_AM335X_USB0
+#define CONFIG_AM335X_USB0_MODE MUSB_PERIPHERAL	
+#endif				 
+/*---------------------------------*/
 
 #endif	/* ! __CONFIG_IGEP0034_H */

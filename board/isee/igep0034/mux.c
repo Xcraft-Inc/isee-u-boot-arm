@@ -92,6 +92,28 @@ static struct module_pin_mux i2c2_pin_mux[] = {
 	{-1},
 }; 
 
+static struct module_pin_mux usb0_pin_mux[] = {
+	{OFFSET(usb0_dm), (MODE(0) | RXACTIVE)},	/* USB1_DM */
+	{OFFSET(usb0_dp), (MODE(0) | RXACTIVE)},	/* USB1_DP */
+	{OFFSET(usb0_ce), (MODE(0) | RXACTIVE)},	/* USB1_CE */
+	{OFFSET(usb0_id), (MODE(0) | RXACTIVE)},	/* USB1_ID */
+	{OFFSET(usb0_vbus), (MODE(0) | RXACTIVE)},	/* USB1_VBUS */
+	{OFFSET(usb0_drvvbus), (MODE(7) | PULLUDEN)},	/* GPIO0_18 USB_OTG_VBUS*/
+	{-1},
+};
+static struct module_pin_mux usb0_host_pin_mux[] = {
+	{OFFSET(usb0_drvvbus), (MODE(7) | PULLUDEN)},	/* GPIO0_18 USB_OTG_VBUS*/
+	{-1},
+};	
+static struct module_pin_mux usb1_pin_mux[] = {
+	{OFFSET(usb1_dm), (MODE(0) | RXACTIVE)},	/* USB1_DM */
+	{OFFSET(usb1_dp), (MODE(0) | RXACTIVE)},	/* USB1_DP */
+	{OFFSET(usb1_ce), (MODE(0) | RXACTIVE)},	/* USB1_CE */
+	{OFFSET(usb1_id), (MODE(0) | RXACTIVE)},	/* USB1_ID */
+	{OFFSET(usb1_vbus), (MODE(0) | RXACTIVE)},	/* USB1_VBUS */
+	{-1},
+};
+
 void enable_uart0_pin_mux(void)
 {
 	configure_module_pin_mux(uart0_pin_mux);	
@@ -114,6 +136,15 @@ void enable_board_pin_mux(void)
 	/* I2C pinmux. */
 	configure_module_pin_mux(i2c1_pin_mux);
 	configure_module_pin_mux(i2c2_pin_mux);
-	
+	/*Enable USB0 and DRVVBUS OTG as HOST*/
+	#if CONFIG_OTG_AS_HOST
+	configure_module_pin_mux(usb0_pin_mux);
+	configure_module_pin_mux(usb0_host_pin_mux);
+	configure_module_pin_mux(usb1_pin_mux);
+	#else
+	/*Enable USB1_*/
+	configure_module_pin_mux(usb1_pin_mux);
+	configure_module_pin_mux(usb0_pin_mux);
+	#endif
 }
 
