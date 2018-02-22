@@ -250,7 +250,7 @@ int board_init(void)
     }
    	/*Set GPIO_CKSYNC of the TPS65910 to OUTPUT HIGH*/
     char* data = "0x0f";
-    tps65910_i2c_write(0x00000060, (uint8_t*)data);
+    tps65910_i2c_write(0x00000060, (uint8_t*)data);    
 	return 0;
 }
 #if defined(CONFIG_DRIVER_TI_CPSW)
@@ -318,6 +318,26 @@ int board_eth_init(bd_t *bis)
 		printf("Error %d registering CPSW switch\n", rv);
 	else
 		ret += rv;
+
+	#ifdef CONFIG_USB_ETHER
+		/* If OTG Ethernet Gadget is activated generate and assign a MAC*/
+		if (!eth_getenv_enetaddr("usbnet_devaddr", mac_addr)) {
+			/* try reading mac address from efuse */
+			mac_lo = readl(&cdev->macid0l);
+			mac_hi = readl(&cdev->macid0h);
+			mac_addr[0] = mac_hi & 0xFF;
+			mac_addr[1] = (mac_hi & 0xFF00) >> 8;
+			mac_addr[2] = (mac_hi & 0xFF0000) >> 16;
+			mac_addr[3] = (mac_hi & 0xFF000000) >> 24;
+			mac_addr[4] = mac_lo & 0xFF;
+			mac_addr[5] = (mac_lo & 0xFF00) >> 8;
+			/*Assign the mac to the "usbnet_devaddr" variable*/
+			if (is_valid_ethaddr(mac_addr))
+				eth_setenv_enetaddr("usbnet_devaddr", mac_addr);
+		}
+		/*Everithing is ready, usb ethernet gadget can be initialized*/
+		usb_eth_initialize(bis);
+	#endif
 
 	return ret;
 }

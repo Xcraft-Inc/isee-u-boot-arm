@@ -110,8 +110,7 @@
 		"if test $board_name = igep0034-lite; then " \
 			"setenv dtbfile am335x-igep-base0040-lite.dtb; fi; " \
 		"if test $dtbfile = undefined; then " \
-			"echo WARNING: Could not determine device tree to use; fi; \0"
-
+			"echo WARNING: Could not determine device tree to use; fi; \0" \
 
 #endif
 
@@ -210,7 +209,11 @@
 #define CONFIG_AM335X_USB1
 #define CONFIG_AM335X_USB1_MODE MUSB_HOST
 #define CONFIG_AM335X_USB0
-#define CONFIG_AM335X_USB0_MODE MUSB_PERIPHERAL	
+#define CONFIG_AM335X_USB0_MODE MUSB_PERIPHERAL
+/*If USB0 is not a HOST it can be defined as USB RTH GADGET*/					 
+#define CONFIG_USB_ETHER
+#define CONFIG_USB_ETH_RNDIS
+/*#define CONFIG_USBNET_HOST_ADDR	"bc:5f:f4:52:d2:60"*/
 #endif				 
 /*---------------------------------*/
 
