@@ -74,4 +74,6 @@ enum {
 
 int tps65910_set_i2c_control(void);
 int tps65910_voltage_update(unsigned int module, unsigned char vddx_op_vol_sel);
+int tps65910_i2c_read(unsigned int reg_offset, unsigned char *buf);
+void tps65910_i2c_write(unsigned int reg_offset, unsigned char *buf);
 #endif	/* __POWER_TPS65910_H__ */

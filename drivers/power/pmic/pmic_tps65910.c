@@ -89,7 +89,7 @@ int tps65910_i2c_read(unsigned int reg_offset, unsigned char *buf)
 }
 
 /*write i2c register*/
-int tps65910_i2c_write(unsigned int reg_offset, unsigned char *buf)
+void tps65910_i2c_write(unsigned int reg_offset, unsigned char *buf)
 {
-		return i2c_write(TPS65910_CTRL_I2C_ADDR, reg_offset, 1, buf, 1);
+		i2c_write(TPS65910_CTRL_I2C_ADDR, reg_offset, 1, buf, 1);
 }
