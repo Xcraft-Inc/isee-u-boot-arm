@@ -145,6 +145,7 @@ struct dsps_glue {
 #ifndef __UBOOT__
 static void dsps_musb_enable(struct musb *musb)
 #else
+#define RNDIS_DELAY_MS (5 * 1000)
 static int dsps_musb_enable(struct musb *musb)
 #endif
 {
@@ -449,6 +450,11 @@ static int dsps_musb_init(struct musb *musb)
 
 	/* Reset the musb */
 	dsps_writel(reg_base, wrp->control, (1 << wrp->reset));
+
+	/* HACK: delay musb start to work with WinXP RNDIS driver */
+	#ifdef CONFIG_SPL_USBETH_SUPPORT
+		mdelay(RNDIS_DELAY_MS);
+	#endif
 
 	/* Start the on-chip PHY and its PLL. */
 	if (data->set_phy_power)
