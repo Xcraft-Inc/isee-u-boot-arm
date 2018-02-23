@@ -98,7 +98,6 @@ static struct module_pin_mux usb0_pin_mux[] = {
 	{OFFSET(usb0_ce), (MODE(0) | RXACTIVE)},	/* USB1_CE */
 	{OFFSET(usb0_id), (MODE(0) | RXACTIVE)},	/* USB1_ID */
 	{OFFSET(usb0_vbus), (MODE(0) | RXACTIVE)},	/* USB1_VBUS */
-	{OFFSET(usb0_drvvbus), (MODE(7) | PULLUDEN)},	/* GPIO0_18 USB_OTG_VBUS*/
 	{-1},
 };
 static struct module_pin_mux usb0_host_pin_mux[] = {
