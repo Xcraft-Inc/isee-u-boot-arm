@@ -32,9 +32,25 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-const uchar igep_mac0 [6] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0xff };
+const uchar IGEP_DEFAULT_MAC_ADDRESS0 [6] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0xff };
 static int igep_eeprom_valid = 0;
-static struct igep_mf_setup igep00x0_eeprom_config;
+#define IGEP_MAGIC_ID 	0x78FC110E
+
+static struct igep_mf_setup igep00x0_eeprom_config = {
+	.magic_id = IGEP_MAGIC_ID,
+	.crc32 = 0,
+	.board_uuid = {0x00},
+	.board_pid = {0x00},
+	.name = {0x00},
+	.model = {0x00},
+	.pcb_version = {0x00},
+	.assembly_rev = {0x00},
+	.board_manufacturer = "ISEE 2007 SL (c) 2018",
+	.manf_of = {0x00},
+	.manf_timestamp = {0x00},
+	.bmac0 = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	.bmac1 = { 0x02, 0x00, 0x00, 0x00, 0x00, 0xfe },
+};
 
 static const struct ns16550_platdata igep_serial = {
 	.base = OMAP34XX_UART3,
@@ -48,11 +64,21 @@ U_BOOT_DEVICE(igep_uart) = {
 	&igep_serial
 };
 
-const uchar* get_mac_address (void)
+static int get_mac_address (void)
 {
+	uchar enetaddr[6];	
+
 	if(igep_eeprom_valid)
-		return igep00x0_eeprom_config.bmac0;
-	return igep_mac0;
+		memcpy(enetaddr, igep00x0_eeprom_config.bmac0, 6);	
+	else{
+		memcpy(enetaddr, IGEP_DEFAULT_MAC_ADDRESS0, 6);	
+		memcpy(igep00x0_eeprom_config.bmac0, IGEP_DEFAULT_MAC_ADDRESS0, 6);
+	}
+
+	if (!is_valid_ethaddr(enetaddr))
+		return -1;	
+
+	return eth_setenv_enetaddr("ethaddr", enetaddr);
 }
 
 /*
@@ -94,21 +120,22 @@ int board_init(void)
 		}
 	else{
 		/* Read configuration from eeprom */
-		if(eeprom_read_setup(0, (char*) &igep00x0_eeprom_config, sizeof(struct igep_mf_setup)))
-	  	printf("EEPROM: read fail\n");	
-		/* Verify crc32 */
-	   	crc_save_value = igep00x0_eeprom_config.crc32;
-    	igep00x0_eeprom_config.crc32 = 0;
-	  	printf("bmac0: %s \n",igep00x0_eeprom_config.bmac0);
-	   	crc_value = crc32(0, (const unsigned char*) &igep00x0_eeprom_config, sizeof(struct igep_mf_setup));
-		if(crc_save_value != crc_value){
-       	printf("EEPROM: CRC32 failed. Loading default MAC\n");				
-		}else{
-	    printf("EEPROM: CRC32 OK! Loading MAC from eeprom\n");	       		
-	  	igep_eeprom_valid = 1;
+		if(!eeprom_read_setup(0, (char*) &igep00x0_eeprom_config, sizeof(struct igep_mf_setup))){
+			crc_save_value = igep00x0_eeprom_config.crc32;
+			crc_value = crc32(0, (const unsigned char*) &igep00x0_eeprom_config, sizeof(struct igep_mf_setup));	
+			if(crc_save_value == crc_value){
+				if(igep00x0_eeprom_config.magic_id == IGEP_MAGIC_ID)
+					igep_eeprom_valid = 1;
+				else
+					igep_eeprom_valid = 0;
+			}
+			else
+				igep_eeprom_valid = 0;
 		}
+		else
+	  		printf("EEPROM: read %d bytes fail\n", sizeof(struct igep_mf_setup));	
+			/* Verify crc32 */
     }
-
 	return 0;
 }
 
@@ -225,8 +252,8 @@ static void setup_net_chip(void)
 
 int board_eth_init(bd_t *bis)
 {
-	eth_setenv_enetaddr("ethaddr", get_mac_address());
-#ifdef CONFIG_SMC911X
+#ifdef CONFIG_SMC911X	
+	get_mac_address();
 	return smc911x_initialize(0, CONFIG_SMC911X_BASE);
 #else
 	return 0;
@@ -294,20 +321,11 @@ void reset_usb_host_t(void){
 int misc_init_r(void)
 {
 	twl4030_power_init();
-
 	twl4030_led_init(TWL4030_LED_LEDEN_LEDAON | TWL4030_LED_LEDEN_LEDBON);
-
 	setup_net_chip();
-
 	reset_usb_host_t();
-
 	omap_die_id_display();
-
 	set_fdt();
-
-
-
-
 	return 0;
 }
 
