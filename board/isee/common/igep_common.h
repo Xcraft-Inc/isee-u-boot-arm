@@ -23,7 +23,7 @@ struct __attribute__((packed)) igep_mf_setup  {
     char board_manufacturer[30];    /* board manufacturer */
     char manf_of[10];            /* manufacturer order of fabrication */
     char manf_timestamp[16];        /* manufacturer timestamp */
-    uchar bmac0[20];            /* MAC 0 - default */
+    uchar bmac0[6];            /* MAC 0 - default */
     uchar bmac1[6];            /* MAC 1 */
 };
 
