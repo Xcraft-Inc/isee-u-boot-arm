@@ -56,6 +56,12 @@ config TARGET_AM335X_IGEP0033
 	select DM_SERIAL
 	select DM_GPIO
 
+config TARGET_AM335X_SOPA0000
+	bool "Support am335x_sopa0000"
+	select DM
+	select DM_SERIAL
+	select DM_GPIO
+
 config TARGET_AM335X_SHC
 	bool "Support am335x based shc board from bosch"
 	select BOARD_LATE_INIT
