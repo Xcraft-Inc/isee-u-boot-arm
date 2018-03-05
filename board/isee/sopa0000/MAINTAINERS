@@ -1,0 +1,9 @@
+SOPA0000 BOARD
+M:	Eduard Gavin <egavin@iseebcn.com>
+M:	Josep Orga <jorga@iseebcn.com>
+M:	Pau Pajuelo <ppajuelo@iseebcn.com>
+M:	Carlos Alonso <calonso@iseebcn.com
+S:	Maintained
+F:	board/isee/sopa0000/
+F:	include/configs/am335x_sopa0000.h
+F:	configs/am335x_sopa0000_defconfig

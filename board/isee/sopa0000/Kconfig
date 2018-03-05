@@ -1,0 +1,15 @@
+if TARGET_AM335X_SOPA0000
+
+config SYS_BOARD
+	default "sopa0000"
+
+config SYS_VENDOR
+	default "isee"
+
+config SYS_SOC
+	default "am33xx"
+
+config SYS_CONFIG_NAME
+	default "am335x_sopa0000"
+
+endif
