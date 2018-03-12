@@ -352,7 +352,7 @@ int board_eth_init(bd_t *bis)
 	else
 		ret += rv;
 
-	#ifdef CONFIG_USB_ETHER
+	#ifdef CONFIG_SPL_USBETH_SUPPORT
 		/* If OTG Ethernet Gadget is activated generate and assign a MAC*/
 		if (!eth_getenv_enetaddr("usbnet_devaddr", mac_addr)) {
 			/* try reading mac address from efuse */

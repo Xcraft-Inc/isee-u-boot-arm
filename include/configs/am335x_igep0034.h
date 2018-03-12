@@ -225,5 +225,11 @@
 #undef CONFIG_PARTITION_UUIDS
 #undef CONFIG_EFI_PARTITION
 #endif /*CONFIG_SPL_BUILD && CONFIG_SPL_USBETH_SUPPORT*/
+/*If we are booting from the ETH --> am335x_sopa0000_ethspl_defconfig*/
+#if defined(CONFIG_SPL_ETH_SUPPORT)
+#undef CONFIG_SPL_NAND_SUPPORT
+#define CONFIG_ENV_IS_NOWHERE
+#undef CONFIG_ENV_IS_IN_NAND
+#endif /*CONFIG_SPL_ETH_SUPPORT*/
 
 #endif	/* ! __CONFIG_IGEP0034_H */
