@@ -302,8 +302,8 @@ void config_ddr_phy(const struct emif_regs *regs, int nr)
 	 * We currently hardcode a value based on a max expected frequency
 	 * of 400MHz.
 	 */
-	writel(EMIF_REG_INITREF_DIS_MASK | 0x3100,
-		&emif_reg[nr]->emif_sdram_ref_ctrl);
+	/*Removing EMIF_REG_INITREF_DIS_MASK | 0x3100 solve problems using H5TQ4G63AFR RAM*/
+	writel(0x3100, &emif_reg[nr]->emif_sdram_ref_ctrl);
 
 	writel(regs->emif_ddr_phy_ctlr_1,
 		&emif_reg[nr]->emif_ddr_phy_ctrl_1);
