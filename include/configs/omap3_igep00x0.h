@@ -38,6 +38,8 @@
 #endif
 #endif
 
+#define GPIO_IGEP00X0_REVISION_DETECTION	129
+
 /* GPIO banks */
 #define CONFIG_OMAP3_GPIO_3		/* GPIO64 .. 95 is in GPIO bank 3 */
 #define CONFIG_OMAP3_GPIO_5		/* GPIO128..159 is in GPIO bank 5 */
@@ -106,7 +108,7 @@
 	"mtdparts=" MTDPARTS_DEFAULT "\0" \
 	"importenv=env import -t -r $loadaddr $filesize \0" \
 	"mmcdev=0\0" \
-	"mmcroot=/dev/mmcblk0p2 rw\0" \
+	"mmcroot=/dev/mmcblk1p2 rw\0" \
 	"mmcrootfstype=ext4 rootwait\0" \
 	"mmcargs=setenv bootargs console=${console} " \
 		"${optargs} " \

@@ -32,6 +32,12 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+
+#define IGEP0020_RB	0x04
+#define IGEP0020_RC	0x01
+#define IGEP0020_RD	0x02
+#define IGEP0020_RE_RF 0x00
+
 const uchar IGEP_DEFAULT_MAC_ADDRESS0 [6] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0xff };
 static int igep_eeprom_valid = 0;
 #define IGEP_MAGIC_ID 	0x78FC110E
@@ -79,6 +85,22 @@ static int get_mac_address (void)
 		return -1;	
 
 	return eth_setenv_enetaddr("ethaddr", enetaddr);
+}
+
+/*
+ * Routine: get_board_revision
+ * Description: GPIO_28 and GPIO_129 are used to read board and revision from
+ */
+
+static int get_board_revision(void)
+{
+	int revision=0;
+	gpio_request(GPIO_IGEP00X0_REVISION_DETECTION,
+				"igep00x0_revision_detection");
+	gpio_direction_input(GPIO_IGEP00X0_REVISION_DETECTION);
+	revision = gpio_get_value(GPIO_IGEP00X0_REVISION_DETECTION);
+	gpio_free(GPIO_IGEP00X0_REVISION_DETECTION);
+	return revision;
 }
 
 /*
@@ -292,7 +314,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 }
 #endif
 
-void set_fdt(void)
+void set_default_fdt(void)
 {
 	switch (gd->bd->bi_arch_number) {
 	case MACH_TYPE_IGEP0020:
@@ -314,6 +336,21 @@ void reset_usb_host_t(void){
 	}
 }
 
+
+void set_boardname(void)
+{
+	int i = get_board_revision();
+	switch (i) {
+	case IGEP0020_RC:
+	setenv("board_rev", "C");
+		break;
+	case IGEP0020_RE_RF:
+	setenv("board_rev", "F");
+		break;
+	}
+	setenv("board_name", "igep0020");
+}
+
 /*
  * Routine: misc_init_r
  * Description: Configure board specific parts
@@ -325,7 +362,8 @@ int misc_init_r(void)
 	setup_net_chip();
 	reset_usb_host_t();
 	omap_die_id_display();
-	set_fdt();
+	set_default_fdt();
+	set_boardname();
 	return 0;
 }
 
