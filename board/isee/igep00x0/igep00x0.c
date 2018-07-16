@@ -348,7 +348,16 @@ void set_boardname(void)
 	setenv("board_rev", "F");
 		break;
 	}
+
+	switch (gd->bd->bi_arch_number) {
+	case MACH_TYPE_IGEP0020:
 	setenv("board_name", "igep0020");
+		break;
+	case MACH_TYPE_IGEP0030:
+	setenv("board_name", "igep0030");
+	setenv("board_rev", "G");
+		break;
+	}
 }
 
 /*

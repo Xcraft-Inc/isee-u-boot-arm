@@ -50,8 +50,8 @@
 	"loadbootenv=load mmc ${mmcdev} ${loadaddr} ${bootenv}\0" \
 	"importbootenv=echo Importing environment from mmc ...; " \
 		"env import -t ${loadaddr} ${filesize}\0" \
-	"mmcload=load mmc ${mmcdev}:2 ${loadaddr} ${bootdir}/${bootfile}; " \
-		"load mmc ${mmcdev}:2 ${fdtaddr} ${bootdir}/${dtbfile}\0" \
+	"mmcload=load mmc ${mmcdev}:1 ${loadaddr} ${bootfile}; " \
+		"load mmc ${mmcdev}:1 ${fdtaddr} ${dtbfile}\0" \
 	"mmcboot=mmc dev ${mmcdev}; " \
 		"if mmc rescan; then " \
 			"echo SD/MMC found on device ${mmcdev};" \
