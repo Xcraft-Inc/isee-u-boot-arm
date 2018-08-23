@@ -46,7 +46,6 @@
 #ifndef CONFIG_SPL_BUILD
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	DEFAULT_LINUX_BOOT_ENV \
-	"bootdir=/boot\0" \
 	"bootfile=zImage\0" \
 	"dtbfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
 	"console=ttyO0,115200n8\0" \
@@ -61,8 +60,8 @@
 	"loadbootenv=load mmc ${mmcdev} ${loadaddr} ${bootenv}\0" \
 	"importbootenv=echo Importing environment from mmc ...; " \
 		"env import -t ${loadaddr} ${filesize}\0" \
-	"mmcload=load mmc ${mmcdev}:2 ${loadaddr} ${bootdir}/${bootfile}; " \
-		"load mmc ${mmcdev}:2 ${fdtaddr} ${bootdir}/${dtbfile}\0" \
+	"mmcload=load mmc ${mmcdev}:1 ${loadaddr} ${bootfile}; " \
+		"load mmc ${mmcdev}:1 ${fdtaddr} ${dtbfile}\0" \
 	"mmcboot=mmc dev ${mmcdev}; " \
 		"if mmc rescan; then " \
 			"echo SD/MMC found on device ${mmcdev};" \
@@ -84,8 +83,8 @@
 	"nandroot=ubi0:filesystem rw ubi.mtd=3,512\0" \
 	"nandrootfstype=ubifs rootwait\0" \
 	"nandload=ubi part filesystem 512; ubifsmount ubi0; " \
-		"ubifsload ${loadaddr} ${bootdir}/${bootfile}; " \
-		"ubifsload ${fdtaddr} ${bootdir}/${dtbfile} \0" \
+		"ubifsload ${loadaddr} ${bootfile}; " \
+		"ubifsload ${fdtaddr} ${dtbfile} \0" \
 	"nandargs=setenv bootargs console=${console} " \
 		"${optargs} " \
 		"root=${nandroot} " \
