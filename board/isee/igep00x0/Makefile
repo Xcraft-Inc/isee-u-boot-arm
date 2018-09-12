@@ -5,5 +5,5 @@
 # SPDX-License-Identifier:	GPL-2.0+
 #
 
-obj-y += eeprom.o
+obj-y += ../common/eeprom.o
 obj-y += igep00x0.o

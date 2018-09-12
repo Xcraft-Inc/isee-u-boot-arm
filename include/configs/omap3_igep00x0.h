@@ -55,7 +55,6 @@
 #define CONFIG_SYS_I2C_EEPROM_BUS 2 		/* Numero de Bus i2C donde esta la eeprom conectada al chip */
 #define CONFIG_SYS_I2C_EEPROM_ADDR 0x51 	/* Identificador de la eeprom en el bus */
 
-/*"nand0=omap2-nand.0"*/
 /* Parititons */
 #define MTDIDS_DEFAULT			"nand0=omap2-nand"
 #define MTDPARTS_DEFAULT		"mtdparts=omap2-nand:512k(SPL),"\
@@ -77,8 +76,8 @@
 #define BOOT_TARGET_DEVICES(func) \
 	func(MMC, mmc, 0)
 
-#define ENV_FINDFDT \
-	"findfdt="\
+#define ENV_SELECTFDT \
+	"selectfdt="\
 		"if test ${board_name} = igep0020; then " \
 			"if test ${board_rev} = F; then " \
 				"setenv fdtfile omap3-igep0020-rev-f.dtb; " \
@@ -96,8 +95,6 @@
 	"bootenv=uEnv.txt\0" \
 	"env_size=800\0" \
 	"devnum=0\0" \
-	"bootdir=/boot\0" \
-	"bootdir2=/\0" \
 	"bootfile=zImage\0" \
 	"console=ttyO2,115200n8\0" \
 	"loadbootenv_mmc=fatload mmc ${devnum} ${loadaddr} ${bootenv}\0" \
@@ -114,25 +111,18 @@
 		"${optargs} " \
 		"root=${mmcroot} " \
 		"rootfstype=${mmcrootfstype}\0" \
-		"bootenv=uEnv.txt\0" \
-	"loadbootenv=load mmc ${mmcdev} ${loadaddr} ${bootenv}\0" \
 	"importbootenv=env import -t ${loadaddr} ${filesize}\0" \
 	"mmcload=load mmc ${mmcdev}:1 ${loadaddr} ${bootfile}; " \
 		"load mmc ${mmcdev}:1 ${fdtaddr} ${fdtfile}\0" \
 	"mmcboot=mmc dev ${mmcdev}; " \
 		"if mmc rescan; then " \
-			"echo Trying to load environment from MMC; " \
-			"echo SD/MMC found on device ${mmcdev};" \
-			"if run loadbootenv; then " \
-				"echo Loaded environment from ${bootenv};" \
+			"echo Booting from SD/MMC; " \
+			"if run loadbootenv_mmc; then " \
 				"run importbootenv;" \
-			"fi;" \
-			"if test -n $uenvcmd; then " \
-				"echo Running uenvcmd ...;" \
-				"run uenvcmd;" \
 			"fi;" \
 			"if run mmcload; then " \
 				"run mmcargs; " \
+				"echo Booting Kernel...; " \
 				"bootz ${loadaddr} - ${fdtaddr};" \
 			"fi;" \
 		"fi;\0" \
@@ -142,7 +132,7 @@
 	"ubinandargs=setenv bootargs ${bootargs} mpurate=800 " \
 		"ubi.mtd=${ubimtd} rootfstype=${ubirootfstype} root=${ubiroot} ${optargs}\0" \
 	"loadbootenv_nand=ubifsload ${loadaddr} ${bootfile}\0" \
-	"nandboot= echo Trying to boot from NAND; " \
+	"nandboot= echo Booting from from NAND; " \
 		"ubi part kernel; " \
 			"ubifsmount ubi0:kernelfs; "\
 			"run loadbootenv_nand; "\
@@ -150,6 +140,7 @@
 			"run loadubifdt; "\
 			"run loadubizimage; "\
 			"run ubinandargs; "\
+			"echo Booting Kernel...; " \
 			"bootz ${loadaddr} - ${fdtaddr}\0" \
 	"netload=tftpboot ${loadaddr} ${bootfile}; " \
 		"tftpboot ${fdtaddr} ${fdtfile} \0" \
@@ -157,21 +148,21 @@
 		"${optargs} " \
 		"root=/dev/nfs " \
 		"ip=${ipaddr} nfsroot=${serverip}:${rootnfs},v3,tcp \0" \
-	"netboot=echo Booting from net ...; " \
-		"run netargs; " \
+	"netboot=echo Booting from NET; " \
 		"run netload; " \
+		"run netargs; " \
+		"echo Booting Kernel...; " \
 		"bootz ${loadaddr} - ${fdtaddr} \0" \
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	ENV_FINDFDT \
+	ENV_SELECTFDT \
 	ENV_DEVICE_SETTINGS \
 	MEM_LAYOUT_SETTINGS \
-	ENV_LOAD_ALGORYTHM \
-	BOOTENV
+	ENV_LOAD_ALGORYTHM
 #endif
 
 #define CONFIG_BOOTCOMMAND \
-	"run findfdt; " \
+	"run selectfdt;" \
 	"run mmcboot;" \
 	"run nandboot;" \
 	"run netboot;" \

@@ -23,7 +23,7 @@
 #include <i2c.h>
 #include <miiphy.h>
 #include <cpsw.h>
-#include "eeprom.h"
+#include "../common/eeprom.h"
 #include "../common/igep_common.h"
 #include <power/tps65910.h>
 #include "board.h"
@@ -234,8 +234,6 @@ int board_init(void)
         if(eeprom_read_setup(0, (char*) &igep0034_eeprom_config, sizeof(struct igep_mf_setup))){
                    printf("eeprom: read fail\n");
     }       
-       
-       
        /* Verify crc32 */
             crc_save_value = igep0034_eeprom_config.crc32;
             igep0034_eeprom_config.crc32 = 0;

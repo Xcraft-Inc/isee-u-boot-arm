@@ -27,7 +27,7 @@
 #include <fdt_support.h>
 #include "igep00x0.h"
 
-#include "eeprom.h"
+#include "../common/eeprom.h"
 #include "../common/igep_common.h"
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -44,7 +44,7 @@ static int igep_eeprom_valid = 0;
 
 static struct igep_mf_setup igep00x0_eeprom_config = {
 	.magic_id = IGEP_MAGIC_ID,
-	.crc32 = 0,
+	.crc32 = 0xa9f8a9f7,
 	.board_uuid = {0x00},
 	.board_pid = {0x00},
 	.name = {0x00},
@@ -55,7 +55,7 @@ static struct igep_mf_setup igep00x0_eeprom_config = {
 	.manf_of = {0x00},
 	.manf_timestamp = {0x00},
 	.bmac0 = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-	.bmac1 = { 0x02, 0x00, 0x00, 0x00, 0x00, 0xfe },
+	.bmac1 = { 0x02, 0x00, 0x00, 0x00, 0x00, 0xff },
 };
 
 static const struct ns16550_platdata igep_serial = {
@@ -75,7 +75,7 @@ static int get_mac_address (void)
 	uchar enetaddr[6];	
 
 	if(igep_eeprom_valid)
-		memcpy(enetaddr, igep00x0_eeprom_config.bmac0, 6);	
+		memcpy(enetaddr, igep00x0_eeprom_config.bmac1, 6);	
 	else{
 		memcpy(enetaddr, IGEP_DEFAULT_MAC_ADDRESS0, 6);	
 		memcpy(igep00x0_eeprom_config.bmac0, IGEP_DEFAULT_MAC_ADDRESS0, 6);
@@ -110,6 +110,7 @@ static int get_board_revision(void)
 int board_init(void)
 {
 	int loops = 100;
+	u32 crc_value0 = 0;
 	u32 crc_value = 0;
     u32 crc_save_value = 0;
 
@@ -143,20 +144,25 @@ int board_init(void)
 	else{
 		/* Read configuration from eeprom */
 		if(!eeprom_read_setup(0, (char*) &igep00x0_eeprom_config, sizeof(struct igep_mf_setup))){
-			crc_save_value = igep00x0_eeprom_config.crc32;
-			crc_value = crc32(0, (const unsigned char*) &igep00x0_eeprom_config, sizeof(struct igep_mf_setup));	
+		crc_save_value = igep00x0_eeprom_config.crc32;
+		igep00x0_eeprom_config.crc32=0;
+		crc_value = crc32(0, (const unsigned char*) &igep00x0_eeprom_config, sizeof(struct igep_mf_setup));
+			/* Verify crc32 */	
 			if(crc_save_value == crc_value){
-				if(igep00x0_eeprom_config.magic_id == IGEP_MAGIC_ID)
+				if(igep00x0_eeprom_config.magic_id == IGEP_MAGIC_ID){
+					printf("eeprom: crc32 OK! Loading mac from eeprom\n");                  
 					igep_eeprom_valid = 1;
+				}
 				else
+					printf("eeprom: crc32 failed. Loading mac from environment\n");
 					igep_eeprom_valid = 0;
 			}
 			else
+                printf("eeprom: crc32 failed. Loading mac from environment\n");
 				igep_eeprom_valid = 0;
 		}
 		else
 	  		printf("EEPROM: read %d bytes fail\n", sizeof(struct igep_mf_setup));	
-			/* Verify crc32 */
     }
 	return 0;
 }
@@ -343,9 +349,11 @@ void set_boardname(void)
 	switch (i) {
 	case IGEP0020_RC:
 	setenv("board_rev", "C");
+	puts("Board: IGEP0020-RC\n");
 		break;
 	case IGEP0020_RE_RF:
 	setenv("board_rev", "F");
+	puts("Board: IGEP0020-RF\n");
 		break;
 	}
 
@@ -356,6 +364,7 @@ void set_boardname(void)
 	case MACH_TYPE_IGEP0030:
 	setenv("board_name", "igep0030");
 	setenv("board_rev", "G");
+	puts("Board: IGEP0030-RG\n");
 		break;
 	}
 }
