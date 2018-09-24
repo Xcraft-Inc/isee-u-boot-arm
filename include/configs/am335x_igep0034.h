@@ -50,6 +50,8 @@
 	"dtbfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
 	"console=ttyO0,115200n8\0" \
 	"mmcdev=0\0" \
+	"mmcpart=1\0" \
+	"bootdir=\0" \
 	"mmcroot=/dev/mmcblk0p2 rw\0" \
 	"mmcrootfstype=ext4 rootwait\0" \
 	"mmcargs=setenv bootargs console=${console} " \
@@ -58,10 +60,11 @@
 		"rootfstype=${mmcrootfstype}\0" \
 		"bootenv=uEnv.txt\0" \
 	"loadbootenv=load mmc ${mmcdev} ${loadaddr} ${bootenv}\0" \
-	"importbootenv=echo Importing environment from mmc ...; " \
+	"loadbootenv_nand=load mmc ${mmcdev} ${loadaddr} ${bootenv}\0" \
+	"importbootenv=echo Importing environment ...; " \
 		"env import -t ${loadaddr} ${filesize}\0" \
-	"mmcload=load mmc ${mmcdev}:1 ${loadaddr} ${bootfile}; " \
-		"load mmc ${mmcdev}:1 ${fdtaddr} ${dtbfile}\0" \
+	"mmcload=load mmc ${mmcdev}:${mmcpart} ${loadaddr} ${bootdir}${bootfile}; " \
+		"load mmc ${mmcdev}:${mmcpart} ${fdtaddr} ${bootdir}${dtbfile}\0" \
 	"mmcboot=mmc dev ${mmcdev}; " \
 		"if mmc rescan; then " \
 			"echo SD/MMC found on device ${mmcdev};" \
@@ -83,8 +86,10 @@
 	"nandroot=ubi0:filesystem rw ubi.mtd=3,512\0" \
 	"nandrootfstype=ubifs rootwait\0" \
 	"nandload=ubi part filesystem 512; ubifsmount ubi0; " \
-		"ubifsload ${loadaddr} ${bootfile}; " \
-		"ubifsload ${fdtaddr} ${dtbfile} \0" \
+		"ubifsload ${loadaddr} /boot/${bootenv}; " \
+		"run importbootenv; " \
+		"ubifsload ${loadaddr} /boot/${bootfile}; " \
+		"ubifsload ${fdtaddr} /boot/${dtbfile} \0" \
 	"nandargs=setenv bootargs console=${console} " \
 		"${optargs} " \
 		"root=${nandroot} " \
@@ -157,9 +162,10 @@
 					"-(filesystem)"
 
 #define CONFIG_CMD_NAND
-/*#define CONFIG_CMD_UBI
-#define CONFIG_CMD_UBIFS */
 #define CONFIG_CMD_MTDPARTS
+
+/* UBIFS support */
+#define CONFIG_CMD_UBIFS					
 
 /* Unsupported features */
 #undef CONFIG_USE_IRQ

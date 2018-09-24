@@ -109,16 +109,23 @@ static int get_board_revision(void)
  */
 int board_init(void)
 {
-	int loops = 100;
-	u32 crc_value0 = 0;
 	u32 crc_value = 0;
     u32 crc_save_value = 0;
 
-	/* find out flash memory type, assume NAND first */
+#if defined(CONFIG_CMD_ONENAND)
+	gpmc_cs0_flash = MTD_DEV_TYPE_ONENAND;
+#else
 	gpmc_cs0_flash = MTD_DEV_TYPE_NAND;
+#endif
+
 	gpmc_init();
 
-	/* Issue a RESET and then READID */
+	/* find out flash memory type, assume NAND first
+	int loops = 100; 
+	gpmc_cs0_flash = MTD_DEV_TYPE_NAND;
+	gpmc_init();
+	*/
+	/* Issue a RESET and then READID
 	writeb(NAND_CMD_RESET, &gpmc_cfg->cs[0].nand_cmd);
 	writeb(NAND_CMD_STATUS, &gpmc_cfg->cs[0].nand_cmd);
 	while ((readl(&gpmc_cfg->cs[0].nand_dat) & NAND_STATUS_READY)
@@ -126,11 +133,11 @@ int board_init(void)
 		udelay(1);
 		if (--loops == 0) {
 			gpmc_cs0_flash = MTD_DEV_TYPE_ONENAND;
-			gpmc_init();	/* reinitialize for OneNAND */
+			gpmc_init();
 			break;
 		}
 	}
-
+	*/
 	/* boot param addr */
 	gd->bd->bi_boot_params = (OMAP34XX_SDRC_CS0 + 0x100);
 
@@ -224,6 +231,8 @@ int spl_start_uboot(void)
 #endif
 #endif
 
+
+#ifdef CONFIG_CMD_ONENAND
 int onenand_board_init(struct mtd_info *mtd)
 {
 	if (gpmc_cs0_flash == MTD_DEV_TYPE_ONENAND) {
@@ -233,6 +242,7 @@ int onenand_board_init(struct mtd_info *mtd)
 	}
 	return 1;
 }
+#endif
 
 #if defined(CONFIG_CMD_NET)
 static void reset_net_chip(int gpio)
@@ -311,7 +321,10 @@ int ft_board_setup(void *blob, bd_t *bd)
 #ifdef CONFIG_FDT_FIXUP_PARTITIONS
 	static struct node_info nodes[] = {
 		{ "ti,omap2-nand", MTD_DEV_TYPE_NAND, },
+#ifdef CONFIG_CMD_ONENAND
 		{ "ti,omap2-onenand", MTD_DEV_TYPE_ONENAND, },
+#endif
+
 	};
 
 	fdt_fixup_mtdparts(blob, nodes, ARRAY_SIZE(nodes));
@@ -390,12 +403,12 @@ void board_mtdparts_default(const char **mtdids, const char **mtdparts)
 	struct mtd_info *mtd = get_mtd_device(NULL, 0);
 	if (mtd) {
 		static char ids[24];
-		static char parts[48];
+		static char parts[78];
 		const char *linux_name = "omap2-nand";
 		if (strncmp(mtd->name, "onenand0", 8) == 0)
 			linux_name = "omap2-onenand";
 		snprintf(ids, sizeof(ids), "%s=%s", mtd->name, linux_name);
-		snprintf(parts, sizeof(parts), "mtdparts=%s:%dk(SPL),-(UBI)",
+		snprintf(parts, sizeof(parts), "mtdparts=%s:%dk(SPL),1m(uboot),128k(environment),-(filesystem)",
 		         linux_name, 4 * mtd->erasesize >> 10);
 		*mtdids = ids;
 		*mtdparts = parts;

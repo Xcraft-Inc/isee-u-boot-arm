@@ -48,18 +48,41 @@
 /* TWL4030 LED */
 #define CONFIG_TWL4030_LED
 
+/* CMD */
 #define CONFIG_CMD_MTDPARTS
-#define CONFIG_CMD_ONENAND
+
+/* USB
+#define CONFIG_USB_MUSB_OMAP2PLUS
+#define CONFIG_USB_MUSB_PIO_ONLY
+#define CONFIG_TWL4030_USB		1
+ EHCI 
+#define CONFIG_USB_EHCI
+#define CONFIG_USB_EHCI_OMAP
+#define CONFIG_OMAP_EHCI_PHY1_RESET_GPIO	147
+#define CONFIG_SYS_USB_EHCI_MAX_ROOT_PORTS 3
+*/
 
 /* EEPROM support */
 #define CONFIG_SYS_I2C_EEPROM_BUS 2 		/* Numero de Bus i2C donde esta la eeprom conectada al chip */
 #define CONFIG_SYS_I2C_EEPROM_ADDR 0x51 	/* Identificador de la eeprom en el bus */
 
-/* Parititons */
-#define MTDIDS_DEFAULT			"nand0=omap2-nand"
+/* Only will work with igep ubi flasher developed customized
 #define MTDPARTS_DEFAULT		"mtdparts=omap2-nand:512k(SPL),"\
 								"20m(uboot),40m(kernel),"\
 								"-(rootfs)"
+*/
+/* This will work with igep firmware media create and flasher tools	
+#define MTDPARTS_DEFAULT		"mtdparts=omap2-nand.0:512k(spl),"\
+								"1m(uboot),128k(environment),"\
+								"-(filesystem)"
+*/
+
+#define MTDIDS_DEFAULT			"nand0=omap2-nand.0"
+#define MTDPARTS_DEFAULT		"mtdparts=omap2-nand.0:512k(spl),"\
+					"1m(uboot),128k(environment),"\
+					"-(filesystem)"
+
+
 #ifndef CONFIG_SPL_BUILD
 
 /* Environment */
@@ -91,20 +114,42 @@
 		"if test ${fdtfile} = ''; then " \
 			"echo WARNING: Could not determine device tree to use; fi; \0"
 
+
+/*
+	ENABLE THIS IN ENV TO CHANGE NANDBOOT TO MAKE IT WORK FOR IGEP UBI CUSTOM FLASHER
+	"ubiroot=ubi0:rootfs rw rootwait\0" \
+	"ubirootfstype=ubifs rootwait fixrt\0" \
+	"ubimtd=3,512\0" \
+	"ubinandargs=setenv bootargs ${bootargs} mpurate=800 " \
+		"ubi.mtd=${ubimtd} rootfstype=${ubirootfstype} root=${ubiroot} ${optargs}\0" \
+	"nandboot= echo Booting from from NAND; " \
+		"ubi part kernel; " \
+			"ubifsmount ubi0:kernelfs; "\
+			"run loadbootenv_nand; "\
+			"run importbootenv;" \
+			"run loadubifdt; "\
+			"run loadubizimage; "\
+			"run ubinandargs; "\
+			"echo Booting Kernel...; " \
+			"bootz ${loadaddr} - ${fdtaddr}\0" \
+*/
+
 #define ENV_LOAD_ALGORYTHM \
 	"bootenv=uEnv.txt\0" \
+	"bootdir=\0" \
 	"env_size=800\0" \
 	"devnum=0\0" \
 	"bootfile=zImage\0" \
 	"console=ttyO2,115200n8\0" \
 	"loadbootenv_mmc=fatload mmc ${devnum} ${loadaddr} ${bootenv}\0" \
-	"loadbootenv_nand=ubifsload 0x82000000 uEnv.txt\0" \
-	"loadubizimage=ubifsload ${loadaddr} ${bootfile}\0" \
-	"loadubifdt=ubifsload ${fdtaddr} ${fdtfile}\0" \
+	"loadbootenv_nand=ubifsload 0x82000000 ${bootdir}${bootenv}\0" \
+	"loadubizimage=ubifsload ${loadaddr} ${bootdir}${bootfile}\0" \
+	"loadubifdt=ubifsload ${fdtaddr} ${bootdir}${fdtfile}\0" \
 	"mtdids=" MTDIDS_DEFAULT "\0" \
 	"mtdparts=" MTDPARTS_DEFAULT "\0" \
-	"importenv=env import -t -r $loadaddr $filesize \0" \
+	"importenv=env import -t -r ${loadaddr} ${filesize} \0" \
 	"mmcdev=0\0" \
+	"mmcpart=1\0" \
 	"mmcroot=/dev/mmcblk1p2 rw\0" \
 	"mmcrootfstype=ext4 rootwait\0" \
 	"mmcargs=setenv bootargs console=${console} " \
@@ -112,8 +157,8 @@
 		"root=${mmcroot} " \
 		"rootfstype=${mmcrootfstype}\0" \
 	"importbootenv=env import -t ${loadaddr} ${filesize}\0" \
-	"mmcload=load mmc ${mmcdev}:1 ${loadaddr} ${bootfile}; " \
-		"load mmc ${mmcdev}:1 ${fdtaddr} ${fdtfile}\0" \
+	"mmcload=load mmc ${mmcdev}:${mmcpart} ${loadaddr} ${bootdir}${bootfile}; " \
+		"load mmc ${mmcdev}:${mmcpart} ${fdtaddr} ${bootdir}${fdtfile}\0" \
 	"mmcboot=mmc dev ${mmcdev}; " \
 		"if mmc rescan; then " \
 			"echo Booting from SD/MMC; " \
@@ -126,22 +171,21 @@
 				"bootz ${loadaddr} - ${fdtaddr};" \
 			"fi;" \
 		"fi;\0" \
-	"ubiroot=ubi0:rootfs rw rootwait\0" \
-	"ubirootfstype=ubifs rootwait fixrt\0" \
-	"ubimtd=3,512\0" \
-	"ubinandargs=setenv bootargs ${bootargs} mpurate=800 " \
-		"ubi.mtd=${ubimtd} rootfstype=${ubirootfstype} root=${ubiroot} ${optargs}\0" \
-	"loadbootenv_nand=ubifsload ${loadaddr} ${bootfile}\0" \
-	"nandboot= echo Booting from from NAND; " \
-		"ubi part kernel; " \
-			"ubifsmount ubi0:kernelfs; "\
-			"run loadbootenv_nand; "\
-			"run importbootenv;" \
-			"run loadubifdt; "\
-			"run loadubizimage; "\
-			"run ubinandargs; "\
-			"echo Booting Kernel...; " \
-			"bootz ${loadaddr} - ${fdtaddr}\0" \
+	"nandroot=ubi0:filesystem rw ubi.mtd=3,512\0" \
+	"nandrootfstype=ubifs rootwait\0" \
+	"nandload=ubi part filesystem 512; ubifsmount ubi0; " \
+		"ubifsload ${loadaddr} /boot/${bootenv}; " \
+		"run importbootenv; " \
+		"ubifsload ${loadaddr} /boot/${bootfile}; " \
+		"ubifsload ${fdtaddr} /boot/${fdtfile} \0" \
+	"nandargs=setenv bootargs console=${console} " \
+		"${optargs} " \
+		"root=${nandroot} " \
+		"rootfstype=${nandrootfstype} \0" \
+	"nandboot=echo Booting from nand ...; " \
+		"run nandargs; " \
+		"run nandload; " \
+		"bootz ${loadaddr} - ${fdtaddr} \0" \
 	"netload=tftpboot ${loadaddr} ${bootfile}; " \
 		"tftpboot ${fdtaddr} ${fdtfile} \0" \
 	"netargs=setenv bootargs console=${console} " \
@@ -182,12 +226,15 @@
 #define CONFIG_MTD_DEVICE
 #define CONFIG_MTD_PARTITIONS
 
-/* OneNAND config */
+/* OneNAND config  */
+#if defined(CONFIG_CMD_ONENAND)
 #define CONFIG_USE_ONENAND_BOARD_INIT
 #define CONFIG_SYS_ONENAND_BASE		ONENAND_MAP
 #define CONFIG_SYS_ONENAND_BLOCK_SIZE	(128*1024)
+#define CONFIG_SPL_ONENAND_SUPPORT
+#endif /* (CONFIG_CMD_NET) */
 
-/* NAND config */
+/* NAND config
 #define CONFIG_SPL_OMAP3_ID_NAND
 #define CONFIG_SYS_NAND_BUSWIDTH_16BIT
 #define CONFIG_SYS_NAND_5_ADDR_CYCLE
@@ -205,17 +252,47 @@
 					 50, 51, 52, 53, 54, 55, 56, 57, }
 #define CONFIG_SYS_NAND_ECCSIZE		512
 #define CONFIG_SYS_NAND_ECCBYTES	14
-#define CONFIG_NAND_OMAP_ECCSCHEME	OMAP_ECC_BCH8_CODE_HW_DETECTION_SW
+#define CONFIG_NAND_OMAP_ECCSCHEME	OMAP_ECC_HAM1_CODE_HW
+
 #define CONFIG_NAND_OMAP_GPMC
 #define CONFIG_BCH
 
 #define CONFIG_SYS_NAND_U_BOOT_START	CONFIG_SYS_TEXT_BASE
 #define CONFIG_SYS_NAND_U_BOOT_OFFS	0x80000
+*/
+/* NAND boot config */
+#define CONFIG_BCH
+#define CONFIG_SPL_OMAP3_ID_NAND
+#define CONFIG_SYS_NAND_BUSWIDTH_16BIT	16
+#define CONFIG_SYS_NAND_MAX_ECCPOS  56
+#define CONFIG_SYS_NAND_5_ADDR_CYCLE
+#define CONFIG_SYS_NAND_PAGE_SIZE	2048
+#define CONFIG_SYS_NAND_OOBSIZE		64
+#define CONFIG_SYS_NAND_BLOCK_SIZE	(128*1024)
+#define CONFIG_SYS_NAND_PAGE_COUNT	(CONFIG_SYS_NAND_BLOCK_SIZE / \
+					 CONFIG_SYS_NAND_PAGE_SIZE)
+#define CONFIG_SYS_NAND_BAD_BLOCK_POS	NAND_LARGE_BADBLOCK_POS
+
+#define CONFIG_SYS_NAND_ECCPOS      {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, \
+					13, 14, 16, 17, 18, 19, 20, 21, 22, \
+					23, 24, 25, 26, 27, 28, 30, 31, 32, \
+					33, 34, 35, 36, 37, 38, 39, 40, 41, \
+					42, 44, 45, 46, 47, 48, 49, 50, 51, \
+					52, 53, 54, 55, 56}
+#define CONFIG_SYS_NAND_ECCSIZE		512
+#define CONFIG_SYS_NAND_ECCBYTES	13
+#define CONFIG_NAND_OMAP_ECCSCHEME	OMAP_ECC_BCH8_CODE_HW_DETECTION_SW
+#define CONFIG_SYS_NAND_U_BOOT_START	CONFIG_SYS_TEXT_BASE
+#define CONFIG_SYS_NAND_U_BOOT_OFFS	0x80000
+#define CONFIG_ENV_SIZE			(32*1024)
+
 
 /* UBI configuration */
 #define CONFIG_CMD_UBIFS	/* Read-only UBI volume operations */
 #define CONFIG_RBTREE		/* required by CONFIG_CMD_UBI */
 #define CONFIG_LZO		/* required by CONFIG_CMD_UBIFS */
+
+/*
 #define CONFIG_SPL_UBI			1
 #define CONFIG_SPL_UBI_MAX_VOL_LEBS	256
 #define CONFIG_SPL_UBI_MAX_PEB_SIZE	(256*1024)
@@ -228,13 +305,14 @@
 #define CONFIG_SPL_UBI_VID_OFFSET	512
 #define CONFIG_SPL_UBI_LEB_START	2048
 #define CONFIG_SPL_UBI_INFO_ADDR	0x88080000
+*/
 
-/* environment organization */
+/* environment organization
 #define CONFIG_ENV_UBI_PART				"kernel"
 #define CONFIG_ENV_UBI_VOLUME			"kernelfs"
 #define CONFIG_ENV_UBI_VOLUME_REDUND	"kernelfs_r"
 #define CONFIG_UBI_SILENCE_MSG		0
 #define CONFIG_UBIFS_SILENCE_MSG	0
 #define CONFIG_ENV_SIZE			(32*1024)
-
+*/
 #endif /* __IGEP00X0_H */
