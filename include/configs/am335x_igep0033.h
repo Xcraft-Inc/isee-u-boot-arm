@@ -165,5 +165,44 @@
 
 #define CONFIG_SYS_NAND_U_BOOT_OFFS	0x80000
 
+/*
+ * USB configuration. We enable MUSB support, both for host and for
+ * gadget. We set USB0 as peripheral and USB1 as host, based on the
+ * board schematic and physical port wired to each. Then for host we
+ * add mass storage support and for gadget we add RNDIS ethernet.
+ */
+#define CONFIG_USB_MUSB_DSPS
+#define CONFIG_ARCH_MISC_INIT                   
+#define CONFIG_USB_MUSB_PIO_ONLY
+#define CONFIG_USB_MUSB_DISABLE_BULK_COMBINE_SPLIT
+#define CONFIG_AM335X_USB0
+#define CONFIG_AM335X_USB0_MODE    MUSB_PERIPHERAL
+#define CONFIG_AM335X_USB1
+#define CONFIG_AM335X_USB1_MODE MUSB_HOST
+
+/*If we are booting from the USB OTG --> am335x_sopa0000_usbspl_defconfig*/
+/*This will set the USB ETH using the Remote Network Driver Interface Specification (RNDIS)
+ * in order to boot using CSSFLASH software */
+#if defined(CONFIG_USB_MUSB_GADGET)
+#define CONFIG_USB_ETHER
+#define CONFIG_USB_ETH_RNDIS
+#define CONFIG_USBNET_HOST_ADDR    "de:ad:be:af:00:00"
+#endif /* CONFIG_USB_MUSB_GADGET && CONFIG_SPL_USBETH_SUPPORT */
+ 
+#if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_USBETH_SUPPORT)
+/* Remove other SPL modes. */
+#undef CONFIG_SPL_NAND_SUPPORT
+#define CONFIG_ENV_IS_NOWHERE
+#undef CONFIG_ENV_IS_IN_NAND
+#undef CONFIG_PARTITION_UUIDS
+#undef CONFIG_EFI_PARTITION
+#endif /*CONFIG_SPL_BUILD && CONFIG_SPL_USBETH_SUPPORT*/
+/*If we are booting from the ETH --> am335x_sopa0000_ethspl_defconfig*/
+#if defined(CONFIG_SPL_ETH_SUPPORT)
+#undef CONFIG_SPL_NAND_SUPPORT
+#define CONFIG_ENV_IS_NOWHERE
+#undef CONFIG_ENV_IS_IN_NAND
+#endif /*CONFIG_SPL_ETH_SUPPORT*/
+
 
 #endif	/* ! __CONFIG_IGEP0033_H */
