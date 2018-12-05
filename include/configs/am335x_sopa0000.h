@@ -37,6 +37,21 @@
 
 /* Module specific Configs --> Defined inside defconfig*/
 
+/*
+ISEE TEST DEPLOY
++				"ipaddr=192.168.2.101\0" \
++				"setup_ip=192.168.2.101:192.168.2.171:192.168.2.1:255.255.255.0:S34:eth0:off:192.168.2.220:192.168.2.1\0" \
++				"serverip=192.168.2.171\0" \
++				"rootnfs=/opt/nfs-server/SOPA0000/ \0" \
+
+-               "root=/dev/nfs " \
+-               "ip=${ipaddr} nfsroot=${serverip}:${rootnfs},v3,tcp \0" \
++               "root=/dev/nfs rw " \
++               "ip=${setup_ip} nfsroot=${serverip}:${rootnfs},v3,tcp \0" \
+
+
+*/
+
 /* Make the verbose messages from UBI stop printing */
 #define CONFIG_UBI_SILENCE_MSG
 #define CONFIG_UBIFS_SILENCE_MSG
@@ -84,7 +99,7 @@
 		"tftpboot ${fdtaddr} ${dtbfile} \0" \
 	"netargs=setenv bootargs console=${console} " \
 		"${optargs} " \
-		"root=/dev/nfs " \
+		"root=/dev/nfs rw " \
 		"ip=${ipaddr} nfsroot=${serverip}:${rootnfs},v3,tcp \0" \
 	"netboot=echo Booting from net ...; " \
 		"run netargs; " \
@@ -102,7 +117,9 @@
 
 #define CONFIG_BOOTCOMMAND \
 	"run usbuenvboot;" \
-	"run nandboot;"
+	"run nandboot;"  \
+	"run netboot;"
+
 	
 /* NS16550 Configuration */
 #define CONFIG_SYS_NS16550_COM1		0x44e09000	/* UART0 */
