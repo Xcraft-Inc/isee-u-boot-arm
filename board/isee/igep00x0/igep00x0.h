@@ -169,4 +169,6 @@
 
 #define MUX_IGEP0030() \
 	MUX_VAL(CP(UART1_TX),       (IDIS | PTD | DIS | M0)) /* UART1_TX */\
-	MUX_VAL(CP(UART1_RX),       (IEN  | PTD | DIS | M0)) /* UART1_RX */
+	MUX_VAL(CP(UART1_RX),       (IEN  | PTD | DIS | M0)) /* UART1_RX */\
+	MUX_VAL(CP(I2C3_SCL),       (IEN  | PTU | EN  | M0)) /* I2C3_SCL */\
+	MUX_VAL(CP(I2C3_SDA),       (IEN  | PTU | EN  | M0)) /* I2C3_SDA */
