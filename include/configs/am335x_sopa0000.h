@@ -63,6 +63,8 @@ ISEE TEST DEPLOY
 	"bootdir=/boot\0" \
 	"bootenv=uEnv.txt\0" \
 	"bootfile=zImage\0" \
+	"ethaddr=02:00:00:00:00:04\0" \
+	"usbnet_devaddr=de:ad:be:af:00:01\0" \
 	"dtbfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
 	"console=ttyO0,115200n8\0" \
 	"loadbootenv= usb start; usb dev 0; " \
@@ -204,7 +206,7 @@ ISEE TEST DEPLOY
 #if defined(CONFIG_USB_MUSB_GADGET)
 #define CONFIG_USB_ETHER
 #define CONFIG_USB_ETH_RNDIS
-#define CONFIG_USBNET_HOST_ADDR	"de:ad:be:af:00:00"
+#define CONFIG_USBNET_HOST_ADDR	"de:ad:be:af:00:01"
 #endif /* CONFIG_USB_MUSB_GADGET && CONFIG_SPL_USBETH_SUPPORT */
 
 #if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_USBETH_SUPPORT)
