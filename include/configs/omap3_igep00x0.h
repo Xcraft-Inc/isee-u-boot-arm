@@ -41,26 +41,33 @@
 #define GPIO_IGEP00X0_REVISION_DETECTION	129
 
 /* GPIO banks */
-#define CONFIG_OMAP3_GPIO_3		/* GPIO64 .. 95 is in GPIO bank 3 */
+/* define CONFIG_OMAP3_GPIO_1	   GPIO0..31 is in GPIO bank 1*/
+#define CONFIG_OMAP3_GPIO_2		/* GPIO32..63 is in GPIO bank 2 */
+#define CONFIG_OMAP3_GPIO_3		/* GPIO64..95 is in GPIO bank 3 */
+/* define CONFIG_OMAP3_GPIO_4	   GPIO96..127 is in GPIO bank 4 */
 #define CONFIG_OMAP3_GPIO_5		/* GPIO128..159 is in GPIO bank 5 */
 #define CONFIG_OMAP3_GPIO_6		/* GPIO160..191 is in GPIO bank 6 */
-
-/* TWL4030 LED */
-#define CONFIG_TWL4030_LED
 
 /* CMD */
 #define CONFIG_CMD_MTDPARTS
 
-/* USB
+/* TWL4030 LED */
+#define CONFIG_TWL4030_LED
+
+/* USB */
+#ifdef CONFIG_USB
+#define CONFIG_USB_OMAP3
+/* usb otg controller: FIXME only MUSB (gadget host) or either EHCI host work at 1 time */
 #define CONFIG_USB_MUSB_OMAP2PLUS
 #define CONFIG_USB_MUSB_PIO_ONLY
-#define CONFIG_TWL4030_USB		1
- EHCI 
+
+/* usb host controller */
 #define CONFIG_USB_EHCI
 #define CONFIG_USB_EHCI_OMAP
-#define CONFIG_OMAP_EHCI_PHY1_RESET_GPIO	147
-#define CONFIG_SYS_USB_EHCI_MAX_ROOT_PORTS 3
-*/
+#define CONFIG_SYS_USB_EHCI_MAX_ROOT_PORTS	8
+/* TWL4030 USB */
+#define CONFIG_TWL4030_USB
+#endif
 
 /* EEPROM support */
 #define CONFIG_SYS_I2C_EEPROM_BUS 2 		/* Numero de Bus i2C donde esta la eeprom conectada al chip */
@@ -281,7 +288,11 @@
 					52, 53, 54, 55, 56}
 #define CONFIG_SYS_NAND_ECCSIZE		512
 #define CONFIG_SYS_NAND_ECCBYTES	13
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
 #define CONFIG_NAND_OMAP_ECCSCHEME	OMAP_ECC_BCH8_CODE_HW_DETECTION_SW
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
+#define CONFIG_NAND_OMAP_ECCSCHEME	OMAP_ECC_HAM1_CODE_SW
+#endif
 #define CONFIG_SYS_NAND_U_BOOT_START	CONFIG_SYS_TEXT_BASE
 #define CONFIG_SYS_NAND_U_BOOT_OFFS	0x80000
 #define CONFIG_ENV_SIZE			(32*1024)

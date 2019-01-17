@@ -18,6 +18,7 @@
 #include <asm/arch/mux.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/mach-types.h>
+#include <linux/errno.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/nand.h>
 #include <linux/mtd/nand.h>
@@ -29,6 +30,18 @@
 
 #include "../common/eeprom.h"
 #include "../common/igep_common.h"
+
+/* usb musb includes (for OTG controller currently as gadget) */
+#include <usb.h>
+#include <linux/usb/musb.h>
+#include <asm/arch/musb.h>
+#include <asm/omap_musb.h>
+
+/* usb ehci includes (for Host subsystem) */
+#ifdef CONFIG_USB_EHCI
+#include <usb.h>
+#include <asm/ehci-omap.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -69,6 +82,33 @@ U_BOOT_DEVICE(igep_uart) = {
 	"ns16550_serial",
 	&igep_serial
 };
+
+#ifdef CONFIG_USB_MUSB_OMAP2PLUS
+static struct musb_hdrc_config musb_config = {
+	.multipoint     = 1,
+	.dyn_fifo       = 1,
+	.num_eps        = 16,
+	.ram_bits       = 12,
+};
+
+static struct omap_musb_board_data musb_board_data = {
+	.interface_type	= MUSB_INTERFACE_ULPI,
+};
+
+static struct musb_hdrc_platform_data musb_plat = {
+#if defined(CONFIG_USB_MUSB_HOST)
+	.mode           = MUSB_HOST,
+#elif defined(CONFIG_USB_MUSB_GADGET)
+	.mode		= MUSB_PERIPHERAL,
+#else
+#error "Please define either CONFIG_USB_MUSB_HOST or CONFIG_USB_MUSB_GADGET"
+#endif
+	.config         = &musb_config,
+	.power          = 100,
+	.platform_ops	= &omap2430_ops,
+	.board_data	= &musb_board_data,
+};
+#endif
 
 static int get_mac_address (void)
 {
@@ -247,7 +287,7 @@ int onenand_board_init(struct mtd_info *mtd)
 #if defined(CONFIG_CMD_NET)
 static void reset_net_chip(int gpio)
 {
-	if (!gpio_request(gpio, "eth nrst")) {
+	if (!gpio_request(gpio, "eth_nrst")) {
 		gpio_direction_output(gpio, 1);
 		udelay(1);
 		gpio_set_value(gpio, 0);
@@ -274,8 +314,16 @@ static void setup_net_chip(void)
 		NET_LAN9221_GPMC_CONFIG6,
 	};
 
+	switch (gd->bd->bi_arch_number) {
+	case MACH_TYPE_IGEP0020:
 	enable_gpmc_cs_config(gpmc_lan_config, &gpmc_cfg->cs[5],
 			CONFIG_SMC911X_BASE, GPMC_SIZE_16M);
+		break;
+	case MACH_TYPE_IGEP0030:
+	enable_gpmc_cs_config(gpmc_lan_config, &gpmc_cfg->cs[4],
+			CONFIG_SMC911X_BASE, GPMC_SIZE_16M);
+		break;
+	}
 
 	/* Enable off mode for NWE in PADCONF_GPMC_NWE register */
 	writew(readw(&ctrl_base->gpmc_nwe) | 0x0E00, &ctrl_base->gpmc_nwe);
@@ -285,7 +333,17 @@ static void setup_net_chip(void)
 	writew(readw(&ctrl_base->gpmc_nadv_ale) | 0x0E00,
 		&ctrl_base->gpmc_nadv_ale);
 
-	reset_net_chip(64);
+	//reset_net_chip(64);
+	switch (gd->bd->bi_arch_number) {
+	case MACH_TYPE_IGEP0020:
+		reset_net_chip(64);
+		break;
+	case MACH_TYPE_IGEP0030:
+		reset_net_chip(42);
+		break;
+	}
+
+
 }
 
 int board_eth_init(bd_t *bis)
@@ -346,13 +404,29 @@ void set_default_fdt(void)
 }
 
 void reset_usb_host_t(void){
-
-	if (!gpio_request(24, "usbh nrst")) {
-		gpio_set_value(24, 0);
+	/*
+	int gusbh_nrst=0;
+	switch (gd->bd->bi_arch_number) {
+	case MACH_TYPE_IGEP0020:
+		gusbh_nrst=24;
+		break;
+	case MACH_TYPE_IGEP0030:
+		gusbh_nrst=54;
+		if (!gpio_request(23, "usbh_b0010rb_hub_rst")) {
+			gpio_direction_output(23, 1);
+			mdelay(2);
+			gpio_set_value(23, 0);
+			mdelay(2);
+		}
+		break;
+	}
+	if (!gpio_request(gusbh_nrst, "usbh_nrst")) {
+		gpio_direction_output(gusbh_nrst, 0);
 		mdelay(2);
-		gpio_set_value(24, 1);
+		gpio_set_value(gusbh_nrst, 1);
 		mdelay(2);
 	}
+	*/
 }
 
 
@@ -393,6 +467,9 @@ int misc_init_r(void)
 	setup_net_chip();
 	reset_usb_host_t();
 	omap_die_id_display();
+#ifdef CONFIG_USB_MUSB_OMAP2PLUS
+	musb_register(&musb_plat, &musb_board_data, (void *)MUSB_BASE);
+#endif
 	set_default_fdt();
 	set_boardname();
 	return 0;
@@ -433,3 +510,98 @@ void set_muxconf_regs(void)
 	MUX_IGEP0030();
 #endif
 }
+
+
+
+#ifdef CONFIG_USB_EHCI_OMAP
+static struct omap_usbhs_board_data usbhs_bdata = {
+	.port_mode[0] = OMAP_EHCI_PORT_MODE_PHY,
+	.port_mode[1] = OMAP_EHCI_PORT_MODE_PHY,
+	.port_mode[2] = OMAP_USBHS_PORT_MODE_UNUSED,
+};
+
+int ehci_hcd_init(int index, enum usb_init_type init,
+		  struct ehci_hccr **hccr, struct ehci_hcor **hcor)
+{
+
+	//flush_dcache_range
+
+	switch (gd->bd->bi_arch_number) {
+	case MACH_TYPE_IGEP0020:
+		/* Turn ON USB Transceiver */
+		if (!gpio_request(24, "usbh_nrst")) {
+			/* First we turn on power */
+			twl4030_led_init(TWL4030_LED_LEDEN_LEDAON | TWL4030_LED_LEDEN_LEDBON);
+			mdelay(2);
+			/* Then we assert reset */
+			gpio_direction_output(24, 0);
+			mdelay(2);
+			/* Finally we deassert reset*/
+			gpio_set_value(24, 1);
+			mdelay(2);
+			gpio_free(24);
+		}
+		break;
+	case MACH_TYPE_IGEP0030:
+		/* Turn ON Base0010 USB HUB */
+		if (!gpio_request(23, "usbh_b0010rb_hub_rst")) {
+			gpio_direction_output(23, 1);
+			mdelay(2);
+			gpio_set_value(23, 0);
+			mdelay(2);
+			gpio_free(23);
+		}
+		/* Turn ON USB Transceiver */
+		if (!gpio_request(54, "usbh_nrst")) {
+			gpio_direction_output(54, 0);
+			mdelay(2);
+			gpio_set_value(54, 1);
+			mdelay(2);
+			gpio_free(54);
+		}
+		break;
+	}
+
+	return omap_ehci_hcd_init(index, &usbhs_bdata, hccr, hcor);
+}
+
+int ehci_hcd_stop(void)
+{
+
+	switch (gd->bd->bi_arch_number) {
+	case MACH_TYPE_IGEP0020:
+		/* Turn OFF USB Transceiver */
+		if (!gpio_request(24, "usbh_nrst")) {
+			gpio_direction_output(24, 1);
+			mdelay(2);
+			gpio_set_value(24, 0);
+			mdelay(2);
+			gpio_free(24);
+			/* Reset is Asserted now we will remove power */
+			twl4030_led_init(TWL4030_LED_LEDEN_LEDBON);
+			mdelay(2);
+		}
+		break;
+	case MACH_TYPE_IGEP0030:
+		/* Turn OFF Base0010 USB HUB */
+		if (!gpio_request(23, "usbh_b0010rb_hub_rst")) {
+			gpio_direction_output(23, 0);
+			mdelay(2);
+			gpio_set_value(23, 1);
+			mdelay(2);
+			gpio_free(23);
+		}
+		/* Turn OFF USB Transceiver */
+		if (!gpio_request(54, "usbh_nrst")) {
+			gpio_direction_output(54, 1);
+			mdelay(2);
+			gpio_set_value(54, 0);
+			mdelay(2);
+			gpio_free(54);
+		}
+		break;
+	}
+	return omap_ehci_hcd_stop();
+}
+#endif /* CONFIG_USB_EHCI_OMAP */
+

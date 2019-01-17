@@ -18,6 +18,7 @@
  * The commented string gives the final mux configuration for that pin
  */
 #define MUX_DEFAULT()\
+	/* SDRC */\
 	MUX_VAL(CP(SDRC_D0),        (IEN  | PTD | DIS | M0)) /* SDRC_D0 */\
 	MUX_VAL(CP(SDRC_D1),        (IEN  | PTD | DIS | M0)) /* SDRC_D1 */\
 	MUX_VAL(CP(SDRC_D2),        (IEN  | PTD | DIS | M0)) /* SDRC_D2 */\
@@ -55,6 +56,7 @@
 	MUX_VAL(CP(SDRC_DQS1),      (IEN  | PTD | DIS | M0)) /* SDRC_DQS1 */\
 	MUX_VAL(CP(SDRC_DQS2),      (IEN  | PTD | DIS | M0)) /* SDRC_DQS2 */\
 	MUX_VAL(CP(SDRC_DQS3),      (IEN  | PTD | DIS | M0)) /* SDRC_DQS3 */\
+	/* GPMC Address */\
 	MUX_VAL(CP(GPMC_A1),        (IDIS | PTD | DIS | M0)) /* GPMC_A1 */\
 	MUX_VAL(CP(GPMC_A2),        (IDIS | PTD | DIS | M0)) /* GPMC_A2 */\
 	MUX_VAL(CP(GPMC_A3),        (IDIS | PTD | DIS | M0)) /* GPMC_A3 */\
@@ -65,6 +67,7 @@
 	MUX_VAL(CP(GPMC_A8),        (IDIS | PTD | DIS | M0)) /* GPMC_A8 */\
 	MUX_VAL(CP(GPMC_A9),        (IDIS | PTD | DIS | M0)) /* GPMC_A9 */\
 	MUX_VAL(CP(GPMC_A10),       (IDIS | PTD | DIS | M0)) /* GPMC_A10 */\
+	/* GPMC Data */\
 	MUX_VAL(CP(GPMC_D0),        (IEN  | PTD | DIS | M0)) /* GPMC_D0 */\
 	MUX_VAL(CP(GPMC_D1),        (IEN  | PTD | DIS | M0)) /* GPMC_D1 */\
 	MUX_VAL(CP(GPMC_D2),        (IEN  | PTD | DIS | M0)) /* GPMC_D2 */\
@@ -81,10 +84,11 @@
 	MUX_VAL(CP(GPMC_D13),       (IEN  | PTD | DIS | M0)) /* GPMC_D13 */\
 	MUX_VAL(CP(GPMC_D14),       (IEN  | PTD | DIS | M0)) /* GPMC_D14 */\
 	MUX_VAL(CP(GPMC_D15),       (IEN  | PTD | DIS | M0)) /* GPMC_D15 */\
+	/* GPMC Signals */\
 	MUX_VAL(CP(GPMC_NCS0),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS0 */\
 	MUX_VAL(CP(GPMC_NCS1),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS1 */\
 	MUX_VAL(CP(GPMC_NCS2),      (IDIS | PTU | EN  | M0)) /* GPIO_nCS2 */\
-	MUX_VAL(CP(GPMC_NCS3),      (IDIS | PTU | EN  | M0)) /* GPIO_nCS3 */\
+ 	MUX_VAL(CP(GPMC_NCS3),      (IDIS | PTU | EN  | M0)) /* GPIO_nCS3 */\
 	MUX_VAL(CP(GPMC_NCS4),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS4 */\
 	MUX_VAL(CP(GPMC_NCS5),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS5 */\
 	MUX_VAL(CP(GPMC_NCS6),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS6 */\
@@ -133,19 +137,6 @@
 	MUX_VAL(CP(HSUSB0_DATA5),	(IEN  | PTD | DIS | M0)) /*HSUSB0_DATA5*/\
 	MUX_VAL(CP(HSUSB0_DATA6),	(IEN  | PTD | DIS | M0)) /*HSUSB0_DATA6*/\
 	MUX_VAL(CP(HSUSB0_DATA7),	(IEN  | PTD | DIS | M0)) /*HSUSB0_DATA7*/\
-	/* USB 1 HOST */\
-	MUX_VAL(CP(ETK_CLK_ES2),	(IDIS | PTU | EN  | M3)) /*HSUSB1_STP*/\
-	MUX_VAL(CP(ETK_CTL_ES2),	(IDIS | PTU | DIS | M3)) /*HSUSB1_CLK*/\
-	MUX_VAL(CP(ETK_D0_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DATA0*/\
-	MUX_VAL(CP(ETK_D1_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DATA1*/\
-	MUX_VAL(CP(ETK_D2_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DATA2*/\
-	MUX_VAL(CP(ETK_D3_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DATA7*/\
-	MUX_VAL(CP(ETK_D4_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DATA4*/\
-	MUX_VAL(CP(ETK_D5_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DATA5*/\
-	MUX_VAL(CP(ETK_D6_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DATA6*/\
-	MUX_VAL(CP(ETK_D7_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DATA3*/\
-	MUX_VAL(CP(ETK_D8_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DIR*/\
-	MUX_VAL(CP(ETK_D9_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_NXT*/\
 	/* UARTS */\
 	MUX_VAL(CP(UART1_TX),  		(IDIS | PTD | DIS | M0)) /* UART1_TX */\
 	MUX_VAL(CP(UART1_RX),  		(IEN  | PTD | DIS | M0)) /* UART1_RX */\
@@ -159,16 +150,51 @@
 #endif
 
 #define MUX_IGEP0020() \
+	/* USB 1 HOST */\
+	MUX_VAL(CP(ETK_CLK_ES2),	(IDIS | PTU | EN  | M3)) /*HSUSB1_STP*/\
+	MUX_VAL(CP(ETK_CTL_ES2),	(IDIS | PTU | DIS | M3)) /*HSUSB1_CLK*/\
+	MUX_VAL(CP(ETK_D0_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DATA0*/\
+	MUX_VAL(CP(ETK_D1_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DATA1*/\
+	MUX_VAL(CP(ETK_D2_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DATA2*/\
+	MUX_VAL(CP(ETK_D3_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DATA7*/\
+	MUX_VAL(CP(ETK_D4_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DATA4*/\
+	MUX_VAL(CP(ETK_D5_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DATA5*/\
+	MUX_VAL(CP(ETK_D6_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DATA6*/\
+	MUX_VAL(CP(ETK_D7_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DATA3*/\
+	MUX_VAL(CP(ETK_D8_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DIR*/\
+	MUX_VAL(CP(ETK_D9_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_NXT*/\
+	/* MISC */\
 	MUX_VAL(CP(GPMC_WAIT2),     (IEN  | PTU | DIS | M4)) /* GPIO_64-ETH_NRST */\
 	MUX_VAL(CP(I2C2_SCL),       (IEN  | PTU | EN  | M0)) /* I2C2_SCL */\
 	MUX_VAL(CP(I2C2_SDA),       (IEN  | PTU | EN  | M0)) /* I2C2_SDA */\
 	MUX_VAL(CP(I2C3_SCL),       (IEN  | PTU | EN  | M0)) /* I2C3_SCL */\
 	MUX_VAL(CP(I2C3_SDA),       (IEN  | PTU | EN  | M0)) /* I2C3_SDA */\
-	MUX_VAL(CP(ETK_D10_ES2),	(IDIS | PTU | EN  | M4)) /* GPIO_24*/
+	MUX_VAL(CP(ETK_D10_ES2),	(IDIS | PTU | EN  | M4)) /* GPIO_24-USB_HOST_RST*/
 
 
 #define MUX_IGEP0030() \
+	/* USB 2 HOST */\
+	MUX_VAL(CP(ETK_D14_ES2),	(IEN  | PTD | EN  | M3)); /*HSUSB2_DATA0*/\
+	MUX_VAL(CP(ETK_D15_ES2),	(IEN  | PTD | EN  | M3)); /*HSUSB2_DATA1*/\
+	MUX_VAL(CP(MCSPI1_CS3),		(IEN  | PTD | EN  | M3)); /*HSUSB2_DATA2*/\
+	MUX_VAL(CP(MCSPI2_CS1),		(IEN  | PTD | EN  | M3)); /*HSUSB2_DATA3*/\
+	MUX_VAL(CP(MCSPI2_SIMO),	(IEN  | PTD | EN  | M3)); /*HSUSB2_DATA4*/\
+	MUX_VAL(CP(MCSPI2_SOMI),	(IEN  | PTD | EN  | M3)); /*HSUSB2_DATA5*/\
+	MUX_VAL(CP(MCSPI2_CS0),		(IEN  | PTD | EN  | M3)); /*HSUSB2_DATA6*/\
+	MUX_VAL(CP(MCSPI2_CLK),		(IEN  | PTD | EN  | M3)); /*HSUSB2_DATA7*/\
+	MUX_VAL(CP(ETK_D12_ES2),	(IEN  | PTD | EN  | M3)); /*HSUSB2_DIR*/\
+	MUX_VAL(CP(ETK_D13_ES2),	(IEN  | PTD | EN  | M3)); /*HSUSB2_NXT*/\
+	MUX_VAL(CP(ETK_D10_ES2),	(IDIS | PTD | DIS | M3)); /*HSUSB2_CLK*/\
+	MUX_VAL(CP(ETK_D11_ES2),	(IDIS | PTU | DIS | M3)); /*HSUSB2_STP*/\
+	/* MISC */\
+	MUX_VAL(CP(GPMC_A9),        (IEN  | PTU | DIS | M4)) /* GPIO 42 ETH0_NRST BASE0010-RB */\
+	MUX_VAL(CP(GPMC_A10),       (IDIS | PTD | DIS | M4)) /* GPIO 43 ETH1_NRST BASE0010-RB */\
 	MUX_VAL(CP(UART1_TX),       (IDIS | PTD | DIS | M0)) /* UART1_TX */\
 	MUX_VAL(CP(UART1_RX),       (IEN  | PTD | DIS | M0)) /* UART1_RX */\
 	MUX_VAL(CP(I2C3_SCL),       (IEN  | PTU | EN  | M0)) /* I2C3_SCL */\
-	MUX_VAL(CP(I2C3_SDA),       (IEN  | PTU | EN  | M0)) /* I2C3_SDA */
+	MUX_VAL(CP(I2C3_SDA),       (IEN  | PTU | EN  | M0)) /* I2C3_SDA */\
+	MUX_VAL(CP(GPMC_NCS3),		(IDIS | PTU | EN  | M4)) /* GPIO 54 */\
+	MUX_VAL(CP(ETK_D9),			(IDIS | PTU | EN  | M4)) /* GPIO 23 BASE0010-RB HUB_RST*/\
+	MUX_VAL(CP(GPMC_NCS1),      (IEN | PTU | EN  | M4)) /* GPIO 52 ETH0_IRQ GPMC_nCS1 */
+
+
