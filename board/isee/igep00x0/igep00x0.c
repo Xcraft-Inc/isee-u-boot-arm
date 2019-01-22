@@ -51,6 +51,23 @@ DECLARE_GLOBAL_DATA_PTR;
 #define IGEP0020_RD	0x02
 #define IGEP0020_RE_RF 0x00
 
+
+/* GPIOS */
+#define GPIO_TO_PIN(bank, gpio)		(32 * (bank) + (gpio))
+
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
+#define GPIO_USER0_LED_RED  GPIO_TO_PIN(0, 27)
+#define GPIO_USER1_LED_GREEN  GPIO_TO_PIN(0, 26)
+#define GPIO_USER2_LED_RED  GPIO_TO_PIN(0, 28)
+#endif
+
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
+#define GPIO_USER1_LED_GREEN  GPIO_TO_PIN(6, 8)
+#define GPIO_USER2_LED_RED  GPIO_TO_PIN(0, 16)
+#endif
+
+
+
 const uchar IGEP_DEFAULT_MAC_ADDRESS0 [6] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0xff };
 static int igep_eeprom_valid = 0;
 #define IGEP_MAGIC_ID 	0x78FC110E
@@ -109,6 +126,39 @@ static struct musb_hdrc_platform_data musb_plat = {
 	.board_data	= &musb_board_data,
 };
 #endif
+
+/* Basic function to turn on/off a gpio */
+static void request_and_set_gpio(int gpio, char *name, int val)
+{
+	int ret;
+
+	ret = gpio_request(gpio, name);
+	if (ret < 0) {
+		printf("%s: Unable to request %s\n", __func__, name);
+		//puts("Unable to request");
+		return;
+	}
+
+	ret = gpio_direction_output(gpio, 0);
+	if (ret < 0) {
+		printf("%s: Unable to set %s  as output\n", __func__, name);
+		//puts("Unable to set output");
+		goto err_free_gpio;
+	}
+
+	gpio_set_value(gpio, val);
+	gpio_free(gpio);
+
+	return;
+
+err_free_gpio:
+	gpio_free(gpio);
+}
+/* Make easy use of request_and_set_gpio function*/
+#define REQUEST_AND_SET_GPIO(N)	request_and_set_gpio(N, #N, 1);
+#define REQUEST_AND_CLR_GPIO(N)	request_and_set_gpio(N, #N, 0);
+
+
 
 static int get_mac_address (void)
 {
@@ -181,10 +231,11 @@ int board_init(void)
 	/* boot param addr */
 	gd->bd->bi_boot_params = (OMAP34XX_SDRC_CS0 + 0x100);
 
+/*
 #if defined(CONFIG_LED_STATUS) && defined(CONFIG_LED_STATUS_BOOT_ENABLE)
 	status_led_set(CONFIG_LED_STATUS_BOOT, CONFIG_LED_STATUS_ON);
 #endif
-	
+*/	
 	if(check_eeprom() != 0){
 		printf("eeprom: not found\n");
 		}
@@ -222,6 +273,18 @@ int board_init(void)
  */
 void get_board_mem_timings(struct board_sdrc_timings *timings)
 {
+	//unsigned char  data;
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
+	/* Turn on LED for testing purposes */
+	REQUEST_AND_SET_GPIO(GPIO_USER0_LED_RED);
+	REQUEST_AND_SET_GPIO(GPIO_USER1_LED_GREEN);
+#endif
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
+	/* Turn ON RED LED for testing purposes */
+	gpio_free(GPIO_USER2_LED_RED);
+	REQUEST_AND_CLR_GPIO(GPIO_USER2_LED_RED);
+#endif
+
 	int mfr, id, err = identify_nand_chip(&mfr, &id);
 
 	timings->mr = MICRON_V_MR_165;
@@ -270,7 +333,6 @@ int spl_start_uboot(void)
 }
 #endif
 #endif
-
 
 #ifdef CONFIG_CMD_ONENAND
 int onenand_board_init(struct mtd_info *mtd)
@@ -344,6 +406,29 @@ static void setup_net_chip(void)
 	}
 
 
+}
+
+int last_stage_init(){
+
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
+	//REQUEST_AND_CLR_GPIO(GPIO_USER1_LED_GREEN);
+	/* Net driver turns ON GPIO_USER0_LED_RED without free, free it and clear it */
+	gpio_free(GPIO_USER0_LED_RED);
+	gpio_free(GPIO_USER1_LED_GREEN);
+	/* First bicolor led is already yellow, colour the second one */
+	REQUEST_AND_SET_GPIO(GPIO_USER2_LED_RED);
+
+#endif
+
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
+	//gpio_free(168);
+	//gpio_free(GPIO_USER2_LED_RED);
+	//gpio_free(GPIO_USER1_LED_GREEN);
+	gpio_free(GPIO_USER2_LED_RED);
+	//REQUEST_AND_SET_GPIO(GPIO_USER1_LED_GREEN);
+	REQUEST_AND_CLR_GPIO(GPIO_USER2_LED_RED);
+#endif
+	return 0;
 }
 
 int board_eth_init(bd_t *bis)
@@ -510,6 +595,8 @@ void set_muxconf_regs(void)
 	MUX_IGEP0030();
 #endif
 }
+
+
 
 
 

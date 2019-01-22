@@ -40,13 +40,15 @@
 
 #define GPIO_IGEP00X0_REVISION_DETECTION	129
 
-/* GPIO banks */
-/* define CONFIG_OMAP3_GPIO_1	   GPIO0..31 is in GPIO bank 1*/
+/* GPIO banks  bank 1 is by default enabled */
 #define CONFIG_OMAP3_GPIO_2		/* GPIO32..63 is in GPIO bank 2 */
 #define CONFIG_OMAP3_GPIO_3		/* GPIO64..95 is in GPIO bank 3 */
-/* define CONFIG_OMAP3_GPIO_4	   GPIO96..127 is in GPIO bank 4 */
+#define CONFIG_OMAP3_GPIO_4	    /*GPIO96..127 is in GPIO bank 4 */
 #define CONFIG_OMAP3_GPIO_5		/* GPIO128..159 is in GPIO bank 5 */
 #define CONFIG_OMAP3_GPIO_6		/* GPIO160..191 is in GPIO bank 6 */
+
+/* Clean LED GPIOs (unless tps) for testing purposes */
+#define CONFIG_LAST_STAGE_INIT
 
 /* CMD */
 #define CONFIG_CMD_MTDPARTS
@@ -88,7 +90,6 @@
 #define MTDPARTS_DEFAULT		"mtdparts=omap2-nand.0:512k(spl),"\
 					"1m(uboot),128k(environment),"\
 					"-(filesystem)"
-
 
 #ifndef CONFIG_SPL_BUILD
 
