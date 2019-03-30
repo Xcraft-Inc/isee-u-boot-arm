@@ -66,7 +66,7 @@ static int igep_eeprom_valid = 0;
 
 static struct igep_mf_setup igep00x0_eeprom_config = {
 	.magic_id = IGEP_MAGIC_ID,
-	.crc32 = 0xa9f8a9f7,
+	.crc32 = 0,
 	.board_uuid = "00000000-0000-0000-0000-000000000000",
 #if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
 	.board_pid = "IGEP0020",
@@ -164,15 +164,45 @@ static int get_board_revision(void)
 	return revision;
 }
 
+static int load_eeprom (void)
+{
+	int result = -1;
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)	
+    igep_eeprom_valid = 0;
+	if(check_eeprom() != 0)
+		printf("eeprom: not found\n");
+	else{
+		struct igep_mf_setup eeprom_cfg;
+		/* Read configuration from eeprom */
+		if(!eeprom_read_setup(0, (char*) &eeprom_cfg, sizeof(struct igep_mf_setup))){
+		/* if(!eeprom_read_setup(0, (char*) &igep00x0_eeprom_config, sizeof(struct igep_mf_setup))){ */			
+    		u32 crc_save_value = 0;			
+			crc_save_value = eeprom_cfg.crc32;
+			eeprom_cfg.crc32=0;
+			u32 crc_value = crc32(0, (const unsigned char*) &eeprom_cfg, sizeof(struct igep_mf_setup));
+			/* Verify crc32 */
+			if((crc_save_value == crc_value) && (eeprom_cfg.magic_id == IGEP_MAGIC_ID){
+				memcpy(igep00x0_eeprom_config, eeprom_cfg, sizeof(struct igep_mf_setup));				
+				igep_eeprom_valid = 1;
+				result = 0;
+				printf("eeprom: crc32 OK! Loading mac from eeprom\n");
+			}
+		}
+    }
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
+    /* NO Eeprom */
+    printf("eeprom: not found\n");
+#endif
+    return result;
+}
+
+
 /*
  * Routine: board_init
  * Description: Early hardware init.
  */
 int board_init(void)
 {
-	u32 crc_value = 0;
-    u32 crc_save_value = 0;
-
 #if defined(CONFIG_CMD_ONENAND)
 	gpmc_cs0_flash = MTD_DEV_TYPE_ONENAND;
 #else
@@ -181,57 +211,15 @@ int board_init(void)
 
 	gpmc_init();
 
-	/* find out flash memory type, assume NAND first
-	int loops = 100; 
-	gpmc_cs0_flash = MTD_DEV_TYPE_NAND;
-	gpmc_init();
-	*/
-	/* Issue a RESET and then READID
-	writeb(NAND_CMD_RESET, &gpmc_cfg->cs[0].nand_cmd);
-	writeb(NAND_CMD_STATUS, &gpmc_cfg->cs[0].nand_cmd);
-	while ((readl(&gpmc_cfg->cs[0].nand_dat) & NAND_STATUS_READY)
-	                                        != NAND_STATUS_READY) {
-		udelay(1);
-		if (--loops == 0) {
-			gpmc_cs0_flash = MTD_DEV_TYPE_ONENAND;
-			gpmc_init();
-			break;
-		}
-	}
-	*/
 	/* boot param addr */
 	gd->bd->bi_boot_params = (OMAP34XX_SDRC_CS0 + 0x100);
 
 #if defined(CONFIG_LED_STATUS) && defined(CONFIG_LED_STATUS_BOOT_ENABLE)
 	status_led_set(CONFIG_LED_STATUS_BOOT, CONFIG_LED_STATUS_ON);
 #endif
-	
-	if(check_eeprom() != 0){
-		printf("eeprom: not found\n");
-		}
-	else{
-		/* Read configuration from eeprom */
-		if(!eeprom_read_setup(0, (char*) &igep00x0_eeprom_config, sizeof(struct igep_mf_setup))){
-		crc_save_value = igep00x0_eeprom_config.crc32;
-		igep00x0_eeprom_config.crc32=0;
-		crc_value = crc32(0, (const unsigned char*) &igep00x0_eeprom_config, sizeof(struct igep_mf_setup));
-			/* Verify crc32 */	
-			if(crc_save_value == crc_value){
-				if(igep00x0_eeprom_config.magic_id == IGEP_MAGIC_ID){
-					printf("eeprom: crc32 OK! Loading mac from eeprom\n");                  
-					igep_eeprom_valid = 1;
-				}
-				else
-					printf("eeprom: crc32 failed. Loading mac from environment\n");
-					igep_eeprom_valid = 0;
-			}
-			else
-                printf("eeprom: crc32 failed. Loading mac from environment\n");
-				igep_eeprom_valid = 0;
-		}
-		else
-	  		printf("EEPROM: read %d bytes fail\n", sizeof(struct igep_mf_setup));	
-    }
+
+	load_eeprom();
+
 	return 0;
 }
 
@@ -334,7 +322,7 @@ static void setup_net_chip(void)
 		NET_LAN9221_GPMC_CONFIG5,
 		NET_LAN9221_GPMC_CONFIG6,
 	};
-
+	printf("setup_net_chip\n");
 #if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
 	enable_gpmc_cs_config(gpmc_lan_config, &gpmc_cfg->cs[5],
 			CONFIG_SMC911X_BASE, GPMC_SIZE_16M);
@@ -360,6 +348,7 @@ static void setup_net_chip(void)
 
 int board_eth_init(bd_t *bis)
 {
+	printf("board_eth_init\n");
 #ifdef CONFIG_SMC911X	
 	get_mac_address();
 	return smc911x_initialize(0, CONFIG_SMC911X_BASE);
@@ -470,6 +459,7 @@ void set_boardname(void)
  */
 int misc_init_r(void)
 {
+	printf("misc_init_r\n");
 	twl4030_power_init();
 	twl4030_led_init(TWL4030_LED_LEDEN_LEDAON | TWL4030_LED_LEDEN_LEDBON);
 	setup_net_chip();
