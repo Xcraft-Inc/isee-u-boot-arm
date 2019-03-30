@@ -46,29 +46,46 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 
-#define IGEP0020_RB	0x04
-#define IGEP0020_RC	0x01
-#define IGEP0020_RD	0x02
-#define IGEP0020_RE_RF 0x00
+#define IGEP0020_RE_RF 	0x00
+#define IGEP0020_RC	   	0x01
+#define IGEP0020_RD		0x02
+#define IGEP0020_RB		0x04
 
-const uchar IGEP_DEFAULT_MAC_ADDRESS0 [6] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0xff };
+/*
+There are 4 ranges of Locally Administered Address Ranges that can be used on a local network:
+
+x2-xx-xx-xx-xx-xx
+x6-xx-xx-xx-xx-xx
+xA-xx-xx-xx-xx-xx
+xE-xx-xx-xx-xx-xx
+*/
+
+const uchar IGEP_DEFAULT_MAC_ADDRESS0 [6] = { 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00 };
 static int igep_eeprom_valid = 0;
 #define IGEP_MAGIC_ID 	0x78FC110E
 
 static struct igep_mf_setup igep00x0_eeprom_config = {
 	.magic_id = IGEP_MAGIC_ID,
 	.crc32 = 0xa9f8a9f7,
-	.board_uuid = {0x00},
-	.board_pid = {0x00},
-	.name = {0x00},
-	.model = {0x00},
-	.pcb_version = {0x00},
-	.assembly_rev = {0x00},
+	.board_uuid = "00000000-0000-0000-0000-000000000000",
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
+	.board_pid = "IGEP0020",
+	.name = "IGEPv2",
+	.model = "IGEP0020",
+	.pcb_version = "RF",
+	.assembly_rev = "70",
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
+	.board_pid = "IGEP0030",
+	.name = "IGEP0030",
+	.model = "IGEP COM MODULE",
+	.pcb_version = "RE",
+	.assembly_rev = "70",
+#endif		
 	.board_manufacturer = "ISEE 2007 SL (c) 2018",
 	.manf_of = {0x00},
 	.manf_timestamp = {0x00},
-	.bmac0 = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-	.bmac1 = { 0x02, 0x00, 0x00, 0x00, 0x00, 0xff },
+	.bmac0 = { 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	.bmac1 = { 0x0E, 0x00, 0x00, 0x00, 0x00, 0x01 },
 };
 
 static const struct ns16550_platdata igep_serial = {
@@ -115,14 +132,14 @@ static int get_mac_address (void)
 	uchar enetaddr[6];	
 
 	if(igep_eeprom_valid)
-		memcpy(enetaddr, igep00x0_eeprom_config.bmac1, 6);	
+		memcpy(enetaddr, igep00x0_eeprom_config.bmac1, 6);
 	else{
 		memcpy(enetaddr, IGEP_DEFAULT_MAC_ADDRESS0, 6);	
 		memcpy(igep00x0_eeprom_config.bmac0, IGEP_DEFAULT_MAC_ADDRESS0, 6);
 	}
 
 	if (!is_valid_ethaddr(enetaddr))
-		return -1;	
+		return -1;
 
 	return eth_setenv_enetaddr("ethaddr", enetaddr);
 }
@@ -135,11 +152,15 @@ static int get_mac_address (void)
 static int get_board_revision(void)
 {
 	int revision=0;
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
 	gpio_request(GPIO_IGEP00X0_REVISION_DETECTION,
 				"igep00x0_revision_detection");
 	gpio_direction_input(GPIO_IGEP00X0_REVISION_DETECTION);
 	revision = gpio_get_value(GPIO_IGEP00X0_REVISION_DETECTION);
 	gpio_free(GPIO_IGEP00X0_REVISION_DETECTION);
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
+	/* Do nothing */
+#endif	
 	return revision;
 }
 
@@ -314,16 +335,13 @@ static void setup_net_chip(void)
 		NET_LAN9221_GPMC_CONFIG6,
 	};
 
-	switch (gd->bd->bi_arch_number) {
-	case MACH_TYPE_IGEP0020:
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
 	enable_gpmc_cs_config(gpmc_lan_config, &gpmc_cfg->cs[5],
 			CONFIG_SMC911X_BASE, GPMC_SIZE_16M);
-		break;
-	case MACH_TYPE_IGEP0030:
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
 	enable_gpmc_cs_config(gpmc_lan_config, &gpmc_cfg->cs[4],
 			CONFIG_SMC911X_BASE, GPMC_SIZE_16M);
-		break;
-	}
+#endif
 
 	/* Enable off mode for NWE in PADCONF_GPMC_NWE register */
 	writew(readw(&ctrl_base->gpmc_nwe) | 0x0E00, &ctrl_base->gpmc_nwe);
@@ -333,17 +351,11 @@ static void setup_net_chip(void)
 	writew(readw(&ctrl_base->gpmc_nadv_ale) | 0x0E00,
 		&ctrl_base->gpmc_nadv_ale);
 
-	//reset_net_chip(64);
-	switch (gd->bd->bi_arch_number) {
-	case MACH_TYPE_IGEP0020:
-		reset_net_chip(64);
-		break;
-	case MACH_TYPE_IGEP0030:
-		reset_net_chip(42);
-		break;
-	}
-
-
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
+	reset_net_chip(64);
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
+	reset_net_chip(42);
+#endif	
 }
 
 int board_eth_init(bd_t *bis)
@@ -393,14 +405,11 @@ int ft_board_setup(void *blob, bd_t *bd)
 
 void set_default_fdt(void)
 {
-	switch (gd->bd->bi_arch_number) {
-	case MACH_TYPE_IGEP0020:
-		setenv("fdtfile", "omap3-igep0020.dtb");
-		break;
-	case MACH_TYPE_IGEP0030:
-		setenv("fdtfile", "omap3-igep0030.dtb");
-		break;
-	}
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
+	setenv("fdtfile", "omap3-igep0020.dtb");
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
+	setenv("fdtfile", "omap3-igep0030.dtb");
+#endif
 }
 
 void reset_usb_host_t(void){
@@ -429,31 +438,30 @@ void reset_usb_host_t(void){
 	*/
 }
 
-
 void set_boardname(void)
 {
-	int i = get_board_revision();
-	switch (i) {
-	case IGEP0020_RC:
-	setenv("board_rev", "C");
-	puts("Board: IGEP0020-RC\n");
-		break;
-	case IGEP0020_RE_RF:
-	setenv("board_rev", "F");
-	puts("Board: IGEP0020-RF\n");
-		break;
+	int rev = get_board_revision();
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
+	switch(rev){
+		case IGEP0020_RC:
+			setenv("board_rev", "C");
+			puts("Board: IGEP0020-RC\n");
+			break;
+		case IGEP0020_RE_RF:
+			setenv("board_rev", "F");
+			puts("Board: IGEP0020-RF\n");
+			break;
 	}
-
-	switch (gd->bd->bi_arch_number) {
-	case MACH_TYPE_IGEP0020:
 	setenv("board_name", "igep0020");
-		break;
-	case MACH_TYPE_IGEP0030:
-	setenv("board_name", "igep0030");
-	setenv("board_rev", "G");
-	puts("Board: IGEP0030-RG\n");
-		break;
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
+	switch(rev){
+		case 0:
+			setenv("board_name", "igep0030");
+			setenv("board_rev", "G");
+			puts("Board: IGEP0030-RG\n");		
+			break;
 	}
+#endif	
 }
 
 /*
@@ -523,84 +531,73 @@ static struct omap_usbhs_board_data usbhs_bdata = {
 int ehci_hcd_init(int index, enum usb_init_type init,
 		  struct ehci_hccr **hccr, struct ehci_hcor **hcor)
 {
-
-	//flush_dcache_range
-
-	switch (gd->bd->bi_arch_number) {
-	case MACH_TYPE_IGEP0020:
-		/* Turn ON USB Transceiver */
-		if (!gpio_request(24, "usbh_nrst")) {
-			/* First we turn on power */
-			twl4030_led_init(TWL4030_LED_LEDEN_LEDAON | TWL4030_LED_LEDEN_LEDBON);
-			mdelay(2);
-			/* Then we assert reset */
-			gpio_direction_output(24, 0);
-			mdelay(2);
-			/* Finally we deassert reset*/
-			gpio_set_value(24, 1);
-			mdelay(2);
-			gpio_free(24);
-		}
-		break;
-	case MACH_TYPE_IGEP0030:
-		/* Turn ON Base0010 USB HUB */
-		if (!gpio_request(23, "usbh_b0010rb_hub_rst")) {
-			gpio_direction_output(23, 1);
-			mdelay(2);
-			gpio_set_value(23, 0);
-			mdelay(2);
-			gpio_free(23);
-		}
-		/* Turn ON USB Transceiver */
-		if (!gpio_request(54, "usbh_nrst")) {
-			gpio_direction_output(54, 0);
-			mdelay(2);
-			gpio_set_value(54, 1);
-			mdelay(2);
-			gpio_free(54);
-		}
-		break;
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
+	/* Turn ON USB Transceiver */
+	if (!gpio_request(24, "usbh_nrst")) {
+		/* First we turn on power */
+		twl4030_led_init(TWL4030_LED_LEDEN_LEDAON | TWL4030_LED_LEDEN_LEDBON);
+		mdelay(2);
+		/* Then we assert reset */
+		gpio_direction_output(24, 0);
+		mdelay(2);
+		/* Finally we deassert reset*/
+		gpio_set_value(24, 1);
+		mdelay(2);
+		gpio_free(24);
 	}
-
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
+	/* Turn ON Base0010 USB HUB */
+	if (!gpio_request(23, "usbh_b0010rb_hub_rst")) {
+		gpio_direction_output(23, 1);
+		mdelay(2);
+		gpio_set_value(23, 0);
+		mdelay(2);
+		gpio_free(23);
+	}
+	/* Turn ON USB Transceiver */
+	if (!gpio_request(54, "usbh_nrst")) {
+		gpio_direction_output(54, 0);
+		mdelay(2);
+		gpio_set_value(54, 1);
+		mdelay(2);
+		gpio_free(54);
+	}
+#endif
 	return omap_ehci_hcd_init(index, &usbhs_bdata, hccr, hcor);
 }
 
 int ehci_hcd_stop(void)
 {
-
-	switch (gd->bd->bi_arch_number) {
-	case MACH_TYPE_IGEP0020:
-		/* Turn OFF USB Transceiver */
-		if (!gpio_request(24, "usbh_nrst")) {
-			gpio_direction_output(24, 1);
-			mdelay(2);
-			gpio_set_value(24, 0);
-			mdelay(2);
-			gpio_free(24);
-			/* Reset is Asserted now we will remove power */
-			twl4030_led_init(TWL4030_LED_LEDEN_LEDBON);
-			mdelay(2);
-		}
-		break;
-	case MACH_TYPE_IGEP0030:
-		/* Turn OFF Base0010 USB HUB */
-		if (!gpio_request(23, "usbh_b0010rb_hub_rst")) {
-			gpio_direction_output(23, 0);
-			mdelay(2);
-			gpio_set_value(23, 1);
-			mdelay(2);
-			gpio_free(23);
-		}
-		/* Turn OFF USB Transceiver */
-		if (!gpio_request(54, "usbh_nrst")) {
-			gpio_direction_output(54, 1);
-			mdelay(2);
-			gpio_set_value(54, 0);
-			mdelay(2);
-			gpio_free(54);
-		}
-		break;
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
+	/* Turn OFF USB Transceiver */
+	if (!gpio_request(24, "usbh_nrst")) {
+		gpio_direction_output(24, 1);
+		mdelay(2);
+		gpio_set_value(24, 0);
+		mdelay(2);
+		gpio_free(24);
+		/* Reset is Asserted now we will remove power */
+		twl4030_led_init(TWL4030_LED_LEDEN_LEDBON);
+		mdelay(2);
 	}
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
+	/* Turn OFF Base0010 USB HUB */
+	if (!gpio_request(23, "usbh_b0010rb_hub_rst")) {
+		gpio_direction_output(23, 0);
+		mdelay(2);
+		gpio_set_value(23, 1);
+		mdelay(2);
+		gpio_free(23);
+	}
+	/* Turn OFF USB Transceiver */
+	if (!gpio_request(54, "usbh_nrst")) {
+		gpio_direction_output(54, 1);
+		mdelay(2);
+		gpio_set_value(54, 0);
+		mdelay(2);
+		gpio_free(54);
+	}
+#endif	
 	return omap_ehci_hcd_stop();
 }
 #endif /* CONFIG_USB_EHCI_OMAP */
