@@ -121,7 +121,10 @@
 	MUX_VAL(CP(SYS_BOOT4),      (IEN  | PTD | DIS | M4)) /* GPIO_6 */\
 	MUX_VAL(CP(SYS_BOOT5),      (IEN  | PTD | DIS | M4)) /* GPIO_7 */\
 	MUX_VAL(CP(SYS_BOOT6),      (IEN  | PTD | DIS | M4)) /* GPIO_8 */\
-	MUX_VAL(CP(GPIO129),        (IEN  | PTU | EN  | M4)) /* GPIO_129 */\
+	MUX_VAL(CP(GPIO126),        (IEN  | PTU | DIS  | M4)) /* GPIO_126 */\
+	MUX_VAL(CP(GPIO127),        (IEN  | PTU | DIS  | M4)) /* GPIO_127 */\
+	MUX_VAL(CP(GPIO128),        (IEN  | PTU | DIS  | M4)) /* GPIO_128 */\
+	MUX_VAL(CP(GPIO129),        (IEN  | PTU | DIS  | M4)) /* GPIO_129 */\
 	MUX_VAL(CP(SDRC_CKE0),      (IDIS | PTU | EN  | M0)) /* SDRC_CKE0 */\
 	MUX_VAL(CP(SDRC_CKE1),      (IDIS | PTU | EN  | M0)) /* SDRC_CKE1 */\
 	/* USB 0 OTG */\

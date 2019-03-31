@@ -43,6 +43,10 @@
 #include <asm/ehci-omap.h>
 #endif
 
+#define CONTROL_WKUP_CTRL		0x48002a5c
+#define GPIO_IO_PWRDNZ			(1 << 6)
+#define PBIASLITEVMODE1			(1 << 8)
+
 DECLARE_GLOBAL_DATA_PTR;
 
 
@@ -51,6 +55,10 @@ DECLARE_GLOBAL_DATA_PTR;
 #define IGEP0020_RD		0x02
 #define IGEP0020_RB		0x04
 
+#define IGEP0030_RG		0x07
+#define IGEP0030_RF		0x0B
+#define IGEP0030_RE		0x0D
+#define IGEP0030_RD_RC	0x0E
 /*
 There are 4 ranges of Locally Administered Address Ranges that can be used on a local network:
 
@@ -152,15 +160,38 @@ static int get_mac_address (void)
 static int get_board_revision(void)
 {
 	int revision=0;
-#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
+
+#if 0 	
+// #if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
 	gpio_request(GPIO_IGEP00X0_REVISION_DETECTION,
 				"igep00x0_revision_detection");
 	gpio_direction_input(GPIO_IGEP00X0_REVISION_DETECTION);
 	revision = gpio_get_value(GPIO_IGEP00X0_REVISION_DETECTION);
 	gpio_free(GPIO_IGEP00X0_REVISION_DETECTION);
-#elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
+// #elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
 	/* Do nothing */
-#endif	
+// #endif	
+#endif
+	gpio_request(GPIO_IGEP00X0_RDET_0, "igep-id-0");
+	gpio_request(GPIO_IGEP00X0_RDET_1, "igep-id-1");
+	gpio_request(GPIO_IGEP00X0_RDET_2, "igep-id-2");
+	gpio_request(GPIO_IGEP00X0_RDET_3, "igep-id-3");
+
+	gpio_direction_input(GPIO_IGEP00X0_RDET_0);
+	gpio_direction_input(GPIO_IGEP00X0_RDET_1);
+	gpio_direction_input(GPIO_IGEP00X0_RDET_2);
+	gpio_direction_input(GPIO_IGEP00X0_RDET_3);
+
+	revision |= (gpio_get_value(GPIO_IGEP00X0_RDET_0) ? 1 : 0 ) << 0;
+	revision |= (gpio_get_value(GPIO_IGEP00X0_RDET_1) ? 1 : 0 ) << 1;
+	revision |= (gpio_get_value(GPIO_IGEP00X0_RDET_2) ? 1 : 0 ) << 2;
+	revision |= (gpio_get_value(GPIO_IGEP00X0_RDET_3) ? 1 : 0 ) << 3;
+
+	gpio_free(GPIO_IGEP00X0_RDET_0);
+	gpio_free(GPIO_IGEP00X0_RDET_1);
+	gpio_free(GPIO_IGEP00X0_RDET_2);
+	gpio_free(GPIO_IGEP00X0_RDET_3);
+
 	return revision;
 }
 
@@ -431,6 +462,7 @@ void set_boardname(void)
 {
 	int rev = get_board_revision();
 #if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
+	setenv("board_name", "igep0020");
 	switch(rev){
 		case IGEP0020_RC:
 			setenv("board_rev", "C");
@@ -440,14 +472,29 @@ void set_boardname(void)
 			setenv("board_rev", "F");
 			puts("Board: IGEP0020-RF\n");
 			break;
-	}
-	setenv("board_name", "igep0020");
+	}	
 #elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
+	setenv("board_name", "igep0030");
 	switch(rev){
-		case 0:
-			setenv("board_name", "igep0030");
+		case IGEP0030_RG:			
 			setenv("board_rev", "G");
-			puts("Board: IGEP0030-RG\n");		
+			puts("Board: IGEP0030-RG\n");
+			break;
+		case IGEP0030_RF:
+			setenv("board_rev", "F");
+			puts("Board: IGEP0030-RF\n");
+			break;
+		case IGEP0030_RE:
+			setenv("board_rev", "E");
+			puts("Board: IGEP0030-RE\n");		
+			break;
+		case IGEP0030_RD_RC:
+			setenv("board_rev", "C-D");
+			puts("Board: IGEP0030-RC-D\n");
+			break;
+		default:
+			setenv("board_rev", "A-B");
+			puts("Board: IGEP0030-RA-B\n");				
 			break;
 	}
 #endif	
@@ -458,9 +505,30 @@ void set_boardname(void)
  * Description: Configure board specific parts
  */
 int misc_init_r(void)
-{
+{		
+	t2_t *t2_base = (t2_t *)T2_BASE;
+	u32 pbias_lite;
+
 	printf("misc_init_r\n");
+	
 	twl4030_power_init();
+
+	/* set VSIM to 1.8V */
+	twl4030_pmrecv_vsel_cfg(TWL4030_PM_RECEIVER_VSIM_DEDICATED,
+				TWL4030_PM_RECEIVER_VSIM_VSEL_18,
+				TWL4030_PM_RECEIVER_VSIM_DEV_GRP,
+				TWL4030_PM_RECEIVER_DEV_GRP_P1);
+
+	/* set up dual-voltage GPIOs to 1.8V */
+	pbias_lite = readl(&t2_base->pbias_lite);
+	pbias_lite &= ~PBIASLITEVMODE1;
+	pbias_lite |= PBIASLITEPWRDNZ1;
+	writel(pbias_lite, &t2_base->pbias_lite);
+	if (get_cpu_family() == CPU_OMAP36XX)
+		writel(readl(OMAP34XX_CTRL_WKUP_CTRL) |
+					 OMAP34XX_CTRL_WKUP_CTRL_GPIO_IO_PWRDNZ,
+					 OMAP34XX_CTRL_WKUP_CTRL);		
+	
 	twl4030_led_init(TWL4030_LED_LEDEN_LEDAON | TWL4030_LED_LEDEN_LEDBON);
 	setup_net_chip();
 	reset_usb_host_t();
