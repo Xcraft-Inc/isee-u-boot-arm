@@ -68,7 +68,6 @@ xA-xx-xx-xx-xx-xx
 xE-xx-xx-xx-xx-xx
 */
 
-const uchar IGEP_DEFAULT_MAC_ADDRESS0 [6] = { 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00 };
 static int igep_eeprom_valid = 0;
 #define IGEP_MAGIC_ID 	0x78FC110E
 
@@ -139,15 +138,15 @@ static int get_mac_address (void)
 {
 	uchar enetaddr[6];	
 
-	if(igep_eeprom_valid)
-		memcpy(enetaddr, igep00x0_eeprom_config.bmac1, 6);
-	else{
-		memcpy(enetaddr, IGEP_DEFAULT_MAC_ADDRESS0, 6);	
-		memcpy(igep00x0_eeprom_config.bmac0, IGEP_DEFAULT_MAC_ADDRESS0, 6);
+	/* Check if the enviroment have ethaddr defined */	
+	if (!eth_getenv_enetaddr("ethaddr", enetaddr)) {
+		memcpy(enetaddr, igep00x0_eeprom_config.bmac0, 6);
 	}
-
-	if (!is_valid_ethaddr(enetaddr))
+	
+	if (!is_valid_ethaddr(enetaddr)){
+		printf("MAC Address: Error\n");
 		return -1;
+	}
 
 	return eth_setenv_enetaddr("ethaddr", enetaddr);
 }
@@ -198,7 +197,7 @@ static int get_board_revision(void)
 static int load_eeprom (void)
 {
 	int result = -1;
-#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)	
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
     igep_eeprom_valid = 0;
 	if(check_eeprom() != 0)
 		printf("eeprom: not found\n");
@@ -352,8 +351,7 @@ static void setup_net_chip(void)
 		NET_LAN9221_GPMC_CONFIG4,
 		NET_LAN9221_GPMC_CONFIG5,
 		NET_LAN9221_GPMC_CONFIG6,
-	};
-	printf("setup_net_chip\n");
+	};	
 #if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
 	enable_gpmc_cs_config(gpmc_lan_config, &gpmc_cfg->cs[5],
 			CONFIG_SMC911X_BASE, GPMC_SIZE_16M);
@@ -378,8 +376,7 @@ static void setup_net_chip(void)
 }
 
 int board_eth_init(bd_t *bis)
-{
-	printf("board_eth_init\n");
+{	
 #ifdef CONFIG_SMC911X	
 	get_mac_address();
 	return smc911x_initialize(0, CONFIG_SMC911X_BASE);
