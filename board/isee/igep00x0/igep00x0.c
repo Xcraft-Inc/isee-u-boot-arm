@@ -75,22 +75,6 @@ static struct igep_mf_setup igep00x0_eeprom_config = {
 	.magic_id = IGEP_MAGIC_ID,
 	.crc32 = 0,
 	.board_uuid = "00000000-0000-0000-0000-000000000000",
-#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
-	.board_pid = "IGEP0020",
-	.name = "IGEPv2",
-	.model = "IGEP0020",
-	.pcb_version = "RF",
-	.assembly_rev = "70",
-#elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
-	.board_pid = "IGEP0030",
-	.name = "IGEP0030",
-	.model = "IGEP COM MODULE",
-	.pcb_version = "RE",
-	.assembly_rev = "70",
-#endif		
-	.board_manufacturer = "ISEE 2007 SL (c) 2018",
-	.manf_of = {0x00},
-	.manf_timestamp = {0x00},
 	.bmac0 = { 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00 },
 	.bmac1 = { 0x0E, 0x00, 0x00, 0x00, 0x00, 0x01 },
 };
@@ -192,6 +176,16 @@ static int get_board_revision(void)
 	gpio_free(GPIO_IGEP00X0_RDET_3);
 
 	return revision;
+}
+
+static void set_boardserial (void)
+{
+	char *serial_string = getenv("serial#");
+	if(!serial_string){
+		setenv("serial#", igep00x0_eeprom_config.board_uuid);
+		serial_string = igep00x0_eeprom_config.board_uuid;
+	}
+	printf("Board uuid: %s\n", serial_string);
 }
 
 static int load_eeprom (void)
@@ -505,8 +499,6 @@ int misc_init_r(void)
 {		
 	t2_t *t2_base = (t2_t *)T2_BASE;
 	u32 pbias_lite;
-
-	printf("misc_init_r\n");
 	
 	twl4030_power_init();
 
@@ -535,6 +527,7 @@ int misc_init_r(void)
 #endif
 	set_default_fdt();
 	set_boardname();
+	set_boardserial();
 	return 0;
 }
 
