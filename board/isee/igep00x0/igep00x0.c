@@ -205,12 +205,14 @@ static int load_eeprom (void)
 			eeprom_cfg.crc32=0;
 			u32 crc_value = crc32(0, (const unsigned char*) &eeprom_cfg, sizeof(struct igep_mf_setup));
 			/* Verify crc32 */
-			if((crc_save_value == crc_value) && (eeprom_cfg.magic_id == IGEP_MAGIC_ID){
-				memcpy(igep00x0_eeprom_config, eeprom_cfg, sizeof(struct igep_mf_setup));				
+			if((crc_save_value == crc_value) && (eeprom_cfg.magic_id == IGEP_MAGIC_ID)){
+				memcpy(&igep00x0_eeprom_config, &eeprom_cfg, sizeof(struct igep_mf_setup));				
 				igep_eeprom_valid = 1;
 				result = 0;
 				printf("eeprom: crc32 OK! Loading mac from eeprom\n");
 			}
+			else
+				printf("eeprom: crc32 Failed! or Magic not valid\n");	
 		}
     }
 #elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
