@@ -167,6 +167,9 @@
 	MUX_VAL(CP(ETK_D8_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_DIR*/\
 	MUX_VAL(CP(ETK_D9_ES2),		(IEN  | PTU | DIS | M3)) /*HSUSB1_NXT*/\
 	/* MISC */\
+	MUX_VAL(CP(ETK_D14_ES2),	(IEN  | PTD | EN  | M4)) /* gpio_28 */ \
+	MUX_VAL(CP(ETK_D12_ES2),	(IEN  | PTD | EN  | M4)) /* gpio_26 */ \
+	MUX_VAL(CP(ETK_D13_ES2),	(IEN  | PTD | EN  | M4)) /* gpio_27 */ \
 	MUX_VAL(CP(GPMC_WAIT2),     (IEN  | PTU | DIS | M4)) /* GPIO_64-ETH_NRST */\
 	MUX_VAL(CP(I2C2_SCL),       (IEN  | PTU | EN  | M0)) /* I2C2_SCL */\
 	MUX_VAL(CP(I2C2_SDA),       (IEN  | PTU | EN  | M0)) /* I2C2_SDA */\

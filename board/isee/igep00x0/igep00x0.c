@@ -5,7 +5,9 @@
  * SPDX-License-Identifier:	GPL-2.0+
  */
 #include <common.h>
+#ifdef CONFIG_LED_STATUS
 #include <status_led.h>
+#endif
 #include <dm.h>
 #include <ns16550.h>
 #include <twl4030.h>
@@ -50,9 +52,9 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 
-#define IGEP0020_RE_RF 	0x00
+#define IGEP0020_RE_RF 	0x07
+#define IGEP0020_RD		0x0B
 #define IGEP0020_RC	   	0x01
-#define IGEP0020_RD		0x02
 #define IGEP0020_RB		0x04
 
 #define IGEP0030_RG		0x07
@@ -68,6 +70,7 @@ xA-xx-xx-xx-xx-xx
 xE-xx-xx-xx-xx-xx
 */
 
+static unsigned int board_rev = 0;
 static int igep_eeprom_valid = 0;
 #define IGEP_MAGIC_ID 	0x78FC110E
 
@@ -140,21 +143,10 @@ static int get_mac_address (void)
  * Description: GPIO_28 and GPIO_129 are used to read board and revision from
  */
 
-static int get_board_revision(void)
+static u32 get_board_revision(void)
 {
-	int revision=0;
+	u32 revision=0;
 
-#if 0 	
-// #if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
-	gpio_request(GPIO_IGEP00X0_REVISION_DETECTION,
-				"igep00x0_revision_detection");
-	gpio_direction_input(GPIO_IGEP00X0_REVISION_DETECTION);
-	revision = gpio_get_value(GPIO_IGEP00X0_REVISION_DETECTION);
-	gpio_free(GPIO_IGEP00X0_REVISION_DETECTION);
-// #elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
-	/* Do nothing */
-// #endif	
-#endif
 	gpio_request(GPIO_IGEP00X0_RDET_0, "igep-id-0");
 	gpio_request(GPIO_IGEP00X0_RDET_1, "igep-id-1");
 	gpio_request(GPIO_IGEP00X0_RDET_2, "igep-id-2");
@@ -165,10 +157,21 @@ static int get_board_revision(void)
 	gpio_direction_input(GPIO_IGEP00X0_RDET_2);
 	gpio_direction_input(GPIO_IGEP00X0_RDET_3);
 
-	revision |= (gpio_get_value(GPIO_IGEP00X0_RDET_0) ? 1 : 0 ) << 0;
-	revision |= (gpio_get_value(GPIO_IGEP00X0_RDET_1) ? 1 : 0 ) << 1;
-	revision |= (gpio_get_value(GPIO_IGEP00X0_RDET_2) ? 1 : 0 ) << 2;
-	revision |= (gpio_get_value(GPIO_IGEP00X0_RDET_3) ? 1 : 0 ) << 3;
+
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)	
+	gpio_direction_input(28);
+	revision |= (u32) (gpio_get_value(28) ? 1 : 0 ) << 4;	
+	// gpio_free(28);
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)		
+	// gpio_direction_input(16);
+	// revision |= (u32) (gpio_get_value(16) ? 1 : 0 ) << 4;	
+	// Not Yet Tested
+#endif
+
+	revision |= (u32) (gpio_get_value(GPIO_IGEP00X0_RDET_0) ? 1 : 0 ) << 0;
+	revision |= (u32) (gpio_get_value(GPIO_IGEP00X0_RDET_1) ? 1 : 0 ) << 1;
+	revision |= (u32) (gpio_get_value(GPIO_IGEP00X0_RDET_2) ? 1 : 0 ) << 2;
+	revision |= (u32) (gpio_get_value(GPIO_IGEP00X0_RDET_3) ? 1 : 0 ) << 3;
 
 	gpio_free(GPIO_IGEP00X0_RDET_0);
 	gpio_free(GPIO_IGEP00X0_RDET_1);
@@ -212,7 +215,7 @@ static int load_eeprom (void)
 				printf("eeprom: crc32 OK! Loading mac from eeprom\n");
 			}
 			else
-				printf("eeprom: crc32 Failed! or Magic not valid\n");	
+				printf("eeprom: crc32 Failed, using defaults\n");	
 		}
     }
 #elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
@@ -222,6 +225,40 @@ static int load_eeprom (void)
     return result;
 }
 
+
+static u8 twl4030_get_led (void)
+{
+	u8 val = 0;
+	twl4030_i2c_read_u8(TWL4030_CHIP_LED, TWL4030_LED_LEDEN,
+			&val);
+	return val;
+}
+
+static void twl4030_set_ledA (int on_off)
+{
+	u8 val = twl4030_get_led();
+	if(on_off){	/* on lead A */
+		val |= (TWL4030_LED_LEDEN_LEDAON | TWL4030_LED_LEDEN_LEDAPWM);
+	}
+	else{	/* off led A*/
+		val &= ~(TWL4030_LED_LEDEN_LEDAON | TWL4030_LED_LEDEN_LEDAPWM);
+	}
+	twl4030_i2c_write_u8(TWL4030_CHIP_LED, TWL4030_LED_LEDEN,
+			     val);	
+}
+
+static void twl4030_set_ledB (int on_off)
+{
+	u8 val = twl4030_get_led();
+	if(on_off){	/* on lead A */
+		val |= (TWL4030_LED_LEDEN_LEDBON | TWL4030_LED_LEDEN_LEDBPWM);
+	}
+	else{	/* off led A*/
+		val &= ~(TWL4030_LED_LEDEN_LEDBON | TWL4030_LED_LEDEN_LEDBPWM);
+	}
+	twl4030_i2c_write_u8(TWL4030_CHIP_LED, TWL4030_LED_LEDEN,
+			     val);	
+}
 
 /*
  * Routine: board_init
@@ -452,11 +489,10 @@ void reset_usb_host_t(void){
 }
 
 void set_boardname(void)
-{
-	int rev = get_board_revision();
+{	
 #if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
 	setenv("board_name", "igep0020");
-	switch(rev){
+	switch(board_rev){
 		case IGEP0020_RC:
 			setenv("board_rev", "C");
 			puts("Board: IGEP0020-RC\n");
@@ -465,10 +501,13 @@ void set_boardname(void)
 			setenv("board_rev", "F");
 			puts("Board: IGEP0020-RF\n");
 			break;
+		default:
+			printf("rev: 0x%x\n", board_rev);
+			break;
 	}	
 #elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
 	setenv("board_name", "igep0030");
-	switch(rev){
+	switch(board_rev){
 		case IGEP0030_RG:			
 			setenv("board_rev", "G");
 			puts("Board: IGEP0030-RG\n");
@@ -487,7 +526,7 @@ void set_boardname(void)
 			break;
 		default:
 			setenv("board_rev", "A-B");
-			puts("Board: IGEP0030-RA-B\n");				
+			puts("Board: IGEP0030-RA-B\n");
 			break;
 	}
 #endif	
@@ -500,7 +539,7 @@ void set_boardname(void)
 int misc_init_r(void)
 {		
 	t2_t *t2_base = (t2_t *)T2_BASE;
-	u32 pbias_lite;
+	u32 pbias_lite;	
 	
 	twl4030_power_init();
 
@@ -520,7 +559,11 @@ int misc_init_r(void)
 					 OMAP34XX_CTRL_WKUP_CTRL_GPIO_IO_PWRDNZ,
 					 OMAP34XX_CTRL_WKUP_CTRL);		
 	
-	twl4030_led_init(TWL4030_LED_LEDEN_LEDAON | TWL4030_LED_LEDEN_LEDBON);
+	board_rev = get_board_revision();
+	/* printf("board_rev: 0x%x\n", board_rev); */
+
+	/* Enable USB Power*/	
+	twl4030_set_ledA(1);	
 	setup_net_chip();
 	reset_usb_host_t();
 	omap_die_id_display();
@@ -585,7 +628,7 @@ int ehci_hcd_init(int index, enum usb_init_type init,
 	/* Turn ON USB Transceiver */
 	if (!gpio_request(24, "usbh_nrst")) {
 		/* First we turn on power */
-		twl4030_led_init(TWL4030_LED_LEDEN_LEDAON | TWL4030_LED_LEDEN_LEDBON);
+		twl4030_set_ledA(1);
 		mdelay(2);
 		/* Then we assert reset */
 		gpio_direction_output(24, 0);
@@ -627,7 +670,7 @@ int ehci_hcd_stop(void)
 		mdelay(2);
 		gpio_free(24);
 		/* Reset is Asserted now we will remove power */
-		twl4030_led_init(TWL4030_LED_LEDEN_LEDBON);
+		twl4030_set_ledA(0);
 		mdelay(2);
 	}
 #elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
