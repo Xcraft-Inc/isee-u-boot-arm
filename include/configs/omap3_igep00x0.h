@@ -28,6 +28,8 @@
 
 #define CONFIG_REVISION_TAG		1
 
+#define CONFIG_CMD_JFFS2
+
 /* Status LED available for IGEP0020 and IGEP0030 but not IGEP0032 */
 #if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020) || \
 		       (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
@@ -307,7 +309,32 @@
 /* UBI configuration */
 #define CONFIG_CMD_UBIFS	/* Read-only UBI volume operations */
 #define CONFIG_RBTREE		/* required by CONFIG_CMD_UBI */
-#define CONFIG_LZO		/* required by CONFIG_CMD_UBIFS */
+#define CONFIG_LZO			/* required by CONFIG_CMD_UBIFS */
+#define CONFIG_JFFS2_LZO	/* required by CONFIG_CMD_JFFS2 */
+
+/* Max number of NAND devices */
+#define CONFIG_SYS_MAX_NAND_DEVICE	1
+/*#define CONFIG_SYS_NAND_BUSWIDTH_16BIT*/
+/* Timeout values (in ticks) */
+#define CONFIG_SYS_FLASH_ERASE_TOUT	(100 * CONFIG_SYS_HZ)
+#define CONFIG_SYS_FLASH_WRITE_TOUT	(100 * CONFIG_SYS_HZ)
+
+/* Flash banks JFFS2 should use */
+#define CONFIG_SYS_MAX_MTD_BANKS	(CONFIG_SYS_MAX_FLASH_BANKS + \
+						CONFIG_SYS_MAX_NAND_DEVICE)
+
+#define CONFIG_SYS_JFFS2_MEM_NAND
+#define CONFIG_SYS_JFFS2_FIRST_BANK	CONFIG_SYS_MAX_FLASH_BANKS
+#define CONFIG_SYS_JFFS2_NUM_BANKS	1
+
+#define CONFIG_JFFS2_NAND
+/* nand device jffs2 lives on */
+#define CONFIG_JFFS2_DEV		"nand0"
+/* Start of jffs2 partition */
+#define CONFIG_JFFS2_PART_OFFSET	0x0180000
+/* Size of jffs2 partition */
+#define CONFIG_JFFS2_PART_SIZE		0x00a00000
+
 
 /*
 #define CONFIG_SPL_UBI			1
