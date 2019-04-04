@@ -78,8 +78,8 @@ static struct igep_mf_setup igep00x0_eeprom_config = {
 	.magic_id = IGEP_MAGIC_ID,
 	.crc32 = 0,
 	.board_uuid = "00000000-0000-0000-0000-000000000000",
-	.bmac0 = { 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00 },
-	.bmac1 = { 0x0E, 0x00, 0x00, 0x00, 0x00, 0x01 },
+	.bmac0 = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	.bmac1 = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
 };
 
 static const struct ns16550_platdata igep_serial = {
@@ -125,13 +125,13 @@ static int get_mac_address (void)
 {
 	uchar enetaddr[6];	
 
-	/* Check if the enviroment have ethaddr defined */	
+	/* Check if the enviroment have ethaddr defined */
 	if (!eth_getenv_enetaddr("ethaddr", enetaddr)) {
 		memcpy(enetaddr, igep00x0_eeprom_config.bmac0, 6);
 	}
 	
 	if (!is_valid_ethaddr(enetaddr)){
-		printf("MAC Address: Error\n");
+		printf("MAC Address: Error or not set\n");
 		return -1;
 	}
 
@@ -586,7 +586,7 @@ void board_mtdparts_default(const char **mtdids, const char **mtdparts)
 		if (strncmp(mtd->name, "onenand0", 8) == 0)
 			linux_name = "omap2-onenand";
 		snprintf(ids, sizeof(ids), "%s=%s", mtd->name, linux_name);
-		snprintf(parts, sizeof(parts), "mtdparts=%s:%dk(SPL),1m(uboot),128k(environment),-(filesystem)",
+		snprintf(parts, sizeof(parts), "mtdparts=%s:%dk(SPL),1m(uboot),10m(boot),-(rootfs)",
 		         linux_name, 4 * mtd->erasesize >> 10);
 		*mtdids = ids;
 		*mtdparts = parts;
