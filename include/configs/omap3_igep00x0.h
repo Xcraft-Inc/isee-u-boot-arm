@@ -164,8 +164,8 @@
 	"importenv=env import -t -r ${loadaddr} ${filesize} \0" \
 	"mmcdev=0\0" \
 	"mmcpart=1\0" \
-	"mmcroot=/dev/mmcblk1p2 rw\0" \
-	"mmcrootfstype=ext4 rootwait\0" \
+	"mmcroot=/dev/mmcblk0p2 rw rootwait\0" \
+	"mmcrootfstype=ext4\0" \
 	"mmcargs=setenv bootargs console=${console} " \
 		"${optargs} " \
 		"root=${mmcroot} " \
