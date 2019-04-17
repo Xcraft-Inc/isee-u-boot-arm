@@ -162,7 +162,7 @@ static u32 get_board_revision(void)
 	gpio_direction_input(28);
 	revision |= (u32) (gpio_get_value(28) ? 1 : 0 ) << 4;	
 	// gpio_free(28);
-#elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)		
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
 	// gpio_direction_input(16);
 	// revision |= (u32) (gpio_get_value(16) ? 1 : 0 ) << 4;	
 	// Not Yet Tested
@@ -223,41 +223,6 @@ static int load_eeprom (void)
     printf("eeprom: not found\n");
 #endif
     return result;
-}
-
-
-static u8 twl4030_get_led (void)
-{
-	u8 val = 0;
-	twl4030_i2c_read_u8(TWL4030_CHIP_LED, TWL4030_LED_LEDEN,
-			&val);
-	return val;
-}
-
-static void twl4030_set_ledA (int on_off)
-{
-	u8 val = twl4030_get_led();
-	if(on_off){	/* on lead A */
-		val |= (TWL4030_LED_LEDEN_LEDAON | TWL4030_LED_LEDEN_LEDAPWM);
-	}
-	else{	/* off led A*/
-		val &= ~(TWL4030_LED_LEDEN_LEDAON | TWL4030_LED_LEDEN_LEDAPWM);
-	}
-	twl4030_i2c_write_u8(TWL4030_CHIP_LED, TWL4030_LED_LEDEN,
-			     val);	
-}
-
-static void twl4030_set_ledB (int on_off)
-{
-	u8 val = twl4030_get_led();
-	if(on_off){	/* on lead A */
-		val |= (TWL4030_LED_LEDEN_LEDBON | TWL4030_LED_LEDEN_LEDBPWM);
-	}
-	else{	/* off led A*/
-		val &= ~(TWL4030_LED_LEDEN_LEDBON | TWL4030_LED_LEDEN_LEDBPWM);
-	}
-	twl4030_i2c_write_u8(TWL4030_CHIP_LED, TWL4030_LED_LEDEN,
-			     val);	
 }
 
 /*
@@ -563,7 +528,9 @@ int misc_init_r(void)
 	/* printf("board_rev: 0x%x\n", board_rev); */
 
 	/* Enable USB Power*/	
-	twl4030_set_ledA(1);	
+#if 0	
+	twl4030_set_ledA(1);
+#endif	
 	setup_net_chip();
 	reset_usb_host_t();
 	omap_die_id_display();
@@ -628,7 +595,9 @@ int ehci_hcd_init(int index, enum usb_init_type init,
 	/* Turn ON USB Transceiver */
 	if (!gpio_request(24, "usbh_nrst")) {
 		/* First we turn on power */
+#if 0		
 		twl4030_set_ledA(1);
+#endif		
 		mdelay(2);
 		/* Then we assert reset */
 		gpio_direction_output(24, 0);
@@ -670,7 +639,9 @@ int ehci_hcd_stop(void)
 		mdelay(2);
 		gpio_free(24);
 		/* Reset is Asserted now we will remove power */
+#if 0		
 		twl4030_set_ledA(0);
+#endif		
 		mdelay(2);
 	}
 #elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)

@@ -193,6 +193,8 @@
 	MUX_VAL(CP(ETK_D10_ES2),	(IDIS | PTD | DIS | M3)); /*HSUSB2_CLK*/\
 	MUX_VAL(CP(ETK_D11_ES2),	(IDIS | PTU | DIS | M3)); /*HSUSB2_STP*/\
 	/* MISC */\
+	MUX_VAL(CP(I2C2_SCL),       (IEN  | PTU | EN  | M4)) /* I2C2_SCL -> gpio 168*/\
+	MUX_VAL(CP(I2C2_SDA),       (IEN  | PTU | EN  | M4)) /* I2C2_SDA -> gpio 183*/\
 	MUX_VAL(CP(GPMC_A9),        (IEN  | PTU | DIS | M4)) /* GPIO 42 ETH0_NRST BASE0010-RB */\
 	MUX_VAL(CP(GPMC_A10),       (IDIS | PTD | DIS | M4)) /* GPIO 43 ETH1_NRST BASE0010-RB */\
 	MUX_VAL(CP(UART1_TX),       (IDIS | PTD | DIS | M0)) /* UART1_TX */\
