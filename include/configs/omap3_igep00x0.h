@@ -16,6 +16,9 @@
 #include <configs/ti_omap3_common.h>
 #include <asm/mach-types.h>
 
+
+#define __ISEE_BOARD_TEST__	
+
 /*
  * We are only ever GP parts and will utilize all of the "downloaded image"
  * area in SRAM which starts at 0x40200000 and ends at 0x4020FFFF (64KB).
@@ -148,6 +151,8 @@
 			"bootz ${loadaddr} - ${fdtaddr}\0" \
 */
 
+#ifndef __ISEE_BOARD_TEST__
+
 #define ENV_LOAD_ALGORYTHM \
 	"bootenv=uEnv.txt\0" \
 	"bootdir=\0" \
@@ -212,18 +217,140 @@
 		"echo Booting Kernel...; " \
 		"bootz ${loadaddr} - ${fdtaddr} \0" \
 
+#else
+
+/*#if 0
+ipaddr=192.168.3.151
+serverip=192.168.3.100
+gateway=192.168.2.1
+netmask=255.255.248.0
+hostname=st1
+dns-server=192.168.3.100
+ntp-server=192.168.3.100
+setup_ip=setenv setup_ip ${ipaddr}:${serverip}:${gateway}:${netmask}:${hostname}:eth0:off:${dns-server}:${ntp-server}
+#endif*/
+
+#define ENV_LOAD_ALGORYTHM \
+	"bootenv=uEnv.txt\0" \
+	"bootdir=\0" \
+	"env_size=800\0" \
+	"devnum=0\0" \
+	"bootstage=0\0" \
+	"console=ttyO2,115200n8\0" \
+	"importbootenv=env import -t ${loadaddr} ${filesize}\0" \
+	"setup_ip=setenv setup_ip ${ipaddr}:${serverip}:${gateway}:${netmask}:${hostname}:eth0:off:${dns-server}:${ntp-server} \0" \
+	"loadnandzImage=fsload ${loadaddr} ${bootdir}${bootfile} \0"\
+	"loadnandfdt=fsload ${fdtaddr} ${bootdir}${fdtfile} \0" \
+	"nandboot=echo Booting from Nand second stage; " \
+		"if run loadnandzImage; then " \
+			"if run loadnandfdt; then " \
+				"run setup_ip; " \
+				"run netargs; " \
+				"led green on; " \
+				"echo Booting Kernel...; " \
+				"bootz ${loadaddr} - ${fdtaddr} " \
+			"else " \
+				"echo Nand load failed -> go stage 3 with netboot. " \
+				"led green off; " \
+				"led blue on; " \
+				"setenv bootstage 3; " \
+				"run netboot; " \
+			"fi; " \
+		"else " \
+			"echo Nand load failed -> go stage 3 with netboot. " \
+			"led green off; " \
+			"led blue on; " \
+			"setenv bootstage 3; " \
+			"run netboot; " \
+		"fi; \0" \
+	"nandboot2=echo Booting from Nand; " \
+		"run loadnandzImage; " \
+		"run loadnandfdt; " \
+		"run setup_ip; " \
+		"run netargs; " \
+		"echo Booting Kernel...; " \
+		"bootz ${loadaddr} - ${fdtaddr} \0" \
+	"netloadzImage=tftpboot ${loadaddr} ${bootfile}; \0" \
+	"netloaddtb=tftpboot ${fdtaddr} ${fdtfile} \0" \
+	"netload=tftpboot ${loadaddr} ${bootfile}; " \
+		"tftpboot ${fdtaddr} ${fdtfile} \0" \
+	"netargs=setenv bootargs console=${console} " \
+		"${optargs} " \
+		"root=/dev/nfs " \
+		"ip=${setup_ip} nfsroot=${serverip}:${rootnfs},v3,tcp " \
+		"bootstage=${bootstage} \0" \
+	"netboot=echo Booting from NET; " \
+		"run netloadzImage; " \
+		"run netloaddtb; " \
+		"run setup_ip; " \
+		"run netargs; " \
+		"echo Booting Kernel...; " \
+		"bootz ${loadaddr} - ${fdtaddr} \0" \
+	"test=run testnand; run check_stage; run goNextStage; \0" \
+	"testnand=nand read ${loadaddr} SPL \0" \
+	"check_stage=chpart boot; " \
+		"if run testnand; then " \
+			"if fsload ${loadaddr} ${bootenv}; then " \
+				"setenv bootstage 2; " \
+				"run importbootenv; " \
+			"else " \
+				"if fatload mmc ${devnum} ${loadaddr} ${bootenv} ; then " \
+					"setenv bootstage 1; " \
+					"run importbootenv; " \
+				"else " \
+					"setenv bootstage 3; " \
+				"fi; " \
+			"fi; " \
+		"else " \
+			"if fatload mmc ${devnum} ${loadaddr} ${bootenv} ; then " \
+				"setenv bootstage 1; " \
+				"run importbootenv; " \
+			"else " \
+				"setenv bootstage 3; " \
+			"fi; " \
+		"fi; \0" \
+	"goNextStage=" \
+		"if test ${bootstage} = 3 ; then " \
+			"run fatalErrorTestEnv; " \
+		"else " \
+			"if test ${bootstage} = 1 ; then " \
+				"run netboot; " \
+			"else " \
+				"if test ${bootstage} = 2 ; then " \
+					"run nandboot; " \
+				"else " \
+					"run fatalErrorTestEnv; " \
+				"fi; " \
+			"fi; " \
+		"fi; \0" \
+	"fatalErrorTestEnv=Test Enviroment Fatal Error. " \
+						"while true; do led all toggle; sleep 1; done; \0" \
+	"fatalErrorHwTest=while true; do led blue toggle; sleep 1; done; \0" \
+
+#endif
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	ENV_SELECTFDT \
 	ENV_DEVICE_SETTINGS \
 	MEM_LAYOUT_SETTINGS \
-	ENV_LOAD_ALGORYTHM
+	ENV_LOAD_ALGORYTHM \
+
 #endif
+
+#ifndef __ISEE_BOARD_TEST__
 
 #define CONFIG_BOOTCOMMAND \
 	"run selectfdt;" \
 	"run mmcboot;" \
 	"run nandboot;" \
 	"run netboot;" \
+
+#else
+
+#define CONFIG_BOOTCOMMAND \
+	"run test;" \
+
+#endif	
 
 #include <config_distro_bootcmd.h>
 
