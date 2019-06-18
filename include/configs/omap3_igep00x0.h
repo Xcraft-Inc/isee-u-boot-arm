@@ -219,23 +219,13 @@
 
 #else
 
-/*#if 0
-ipaddr=192.168.3.151
-serverip=192.168.3.100
-gateway=192.168.2.1
-netmask=255.255.248.0
-hostname=st1
-dns-server=192.168.3.100
-ntp-server=192.168.3.100
-setup_ip=setenv setup_ip ${ipaddr}:${serverip}:${gateway}:${netmask}:${hostname}:eth0:off:${dns-server}:${ntp-server}
-#endif*/
-
 #define ENV_LOAD_ALGORYTHM \
 	"bootenv=uEnv.txt\0" \
 	"bootdir=\0" \
 	"env_size=800\0" \
 	"devnum=0\0" \
 	"bootstage=0\0" \
+	"testdef=IGEP0000-D-TEST\0" \
 	"console=ttyO2,115200n8\0" \
 	"importbootenv=env import -t ${loadaddr} ${filesize}\0" \
 	"setup_ip=setenv setup_ip ${ipaddr}:${serverip}:${gateway}:${netmask}:${hostname}:eth0:off:${dns-server}:${ntp-server} \0" \
