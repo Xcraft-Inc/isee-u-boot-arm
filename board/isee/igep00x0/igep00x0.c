@@ -72,7 +72,6 @@ xE-xx-xx-xx-xx-xx
 
 static unsigned int board_rev = 0;
 static int igep_eeprom_valid = 0;
-#define IGEP_MAGIC_ID 	0x78FC110E
 
 static struct igep_mf_setup igep00x0_eeprom_config = {
 	.magic_id = IGEP_MAGIC_ID,

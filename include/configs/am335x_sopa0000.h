@@ -63,8 +63,6 @@ ISEE TEST DEPLOY
 	"bootdir=/boot\0" \
 	"bootenv=uEnv.txt\0" \
 	"bootfile=zImage\0" \
-	"ethaddr=02:00:00:00:00:04\0" \
-	"usbnet_devaddr=de:ad:be:af:00:01\0" \
 	"dtbfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
 	"console=ttyO0,115200n8\0" \
 	"loadbootenv= usb start; usb dev 0; " \
@@ -131,6 +129,7 @@ ISEE TEST DEPLOY
 /* Ethernet support */
 #define CONFIG_PHYLIB
 #define CONFIG_PHY_SMSC
+#define CONFIG_DRIVER_TI_CPSW
 
 /* EEPROM support */
 #define CONFIG_SYS_I2C_EEPROM_BUS 1 		/* Numero de Bus i2C donde esta la eeprom conectada al chip */

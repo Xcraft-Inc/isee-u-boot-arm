@@ -23,7 +23,7 @@
 #include <i2c.h>
 #include <miiphy.h>
 #include <cpsw.h>
-#include "eeprom.h"
+#include "../common/eeprom.h"
 #include "../common/igep_common.h"
 #include <power/tps65910.h>
 #include "board.h"
@@ -34,9 +34,7 @@ static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
 static struct igep_mf_setup igep0034_eeprom_config;
 
 static struct igep_mf_setup igep0034_eeprom_config_initial = {
-	 .crc32 = 0,              				/* eeprom crc32 */
-     .bmac0 = "b0:d5:cc:26:ff:c3"           /* MAC 0 - default */
-    
+	 .crc32 = 0,              				/* eeprom crc32 */    
 };
 
 int igep_eeprom_valid;
@@ -199,7 +197,18 @@ int board_init(void)
 
 	return 0;
 }
-#if defined(CONFIG_SPL_USBETH_SUPPORT) /*If OTG USB is used to boot*/
+
+void print_mac_isee (int idx, uint8_t host_mac[6])
+{
+
+	printf("*idx=%x MAC = %02x:%02x:%02x:%02x:%02x:%02x\n", idx,
+			host_mac[0], host_mac[1],
+			host_mac[2], host_mac[3],
+			host_mac[4], host_mac[5]);
+
+}
+
+#if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_USBETH_SUPPORT) /*If OTG USB is used to boot*/
 
 int board_eth_init(bd_t *bis)
 {
@@ -223,10 +232,13 @@ int board_eth_init(bd_t *bis)
 			eth_setenv_enetaddr("usbnet_devaddr", mac_addr);
 	}
 	/*Everithing is ready, usb ethernet gadget can be initialized*/
+	print_mac_isee(0, mac_addr);
 	usb_eth_initialize(bis);
 	return ret;
 }
-#elif defined(CONFIG_DRIVER_TI_CPSW)
+
+#elif !defined(CONFIG_SPL_BUILD)  && defined(CONFIG_DRIVER_TI_CPSW)
+
 static void cpsw_control(int enabled)
 {
 	/* VTP can be added here */
@@ -269,6 +281,8 @@ int board_eth_init(bd_t *bis)
 	uint8_t mac_addr[6];
 	uint32_t mac_hi, mac_lo;
 
+
+	printf("* SEGUNDO board_eth_init\n");
 	if (!eth_getenv_enetaddr("ethaddr", mac_addr)) {
 		/* try reading mac address from efuse */
 		mac_lo = readl(&cdev->macid0l);
@@ -282,7 +296,7 @@ int board_eth_init(bd_t *bis)
 		if (is_valid_ethaddr(mac_addr))
 			eth_setenv_enetaddr("ethaddr", mac_addr);
 	}
-
+	print_mac_isee(1, mac_addr);
 	writel((GMII1_SEL_RMII | RMII1_IO_CLK_EN),
 	       &cdev->miisel);
 
@@ -309,6 +323,7 @@ int board_eth_init(bd_t *bis)
 				eth_setenv_enetaddr("usbnet_devaddr", mac_addr);
 		}
 		/*Everithing is ready, usb ethernet gadget can be initialized*/
+		print_mac_isee(2, mac_addr);
 		usb_eth_initialize(bis);
 	#endif
 

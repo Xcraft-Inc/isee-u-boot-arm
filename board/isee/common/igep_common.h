@@ -11,6 +11,8 @@
 #ifndef __COMMON_HEADER__
 #define __COMMON_HEADER__
 
+#define IGEP_MAGIC_ID 	0x78FC110E
+
 struct __attribute__((packed)) igep_mf_setup  {
     u32 magic_id;                   /* eeprom magic id */
     u32 crc32;                      /* eeprom crc32 */
