@@ -198,16 +198,6 @@ int board_init(void)
 	return 0;
 }
 
-void print_mac_isee (int idx, uint8_t host_mac[6])
-{
-
-	printf("*idx=%x MAC = %02x:%02x:%02x:%02x:%02x:%02x\n", idx,
-			host_mac[0], host_mac[1],
-			host_mac[2], host_mac[3],
-			host_mac[4], host_mac[5]);
-
-}
-
 #if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_USBETH_SUPPORT) /*If OTG USB is used to boot*/
 
 int board_eth_init(bd_t *bis)
@@ -232,7 +222,6 @@ int board_eth_init(bd_t *bis)
 			eth_setenv_enetaddr("usbnet_devaddr", mac_addr);
 	}
 	/*Everithing is ready, usb ethernet gadget can be initialized*/
-	print_mac_isee(0, mac_addr);
 	usb_eth_initialize(bis);
 	return ret;
 }
@@ -281,8 +270,6 @@ int board_eth_init(bd_t *bis)
 	uint8_t mac_addr[6];
 	uint32_t mac_hi, mac_lo;
 
-
-	printf("* SEGUNDO board_eth_init\n");
 	if (!eth_getenv_enetaddr("ethaddr", mac_addr)) {
 		/* try reading mac address from efuse */
 		mac_lo = readl(&cdev->macid0l);
@@ -296,7 +283,6 @@ int board_eth_init(bd_t *bis)
 		if (is_valid_ethaddr(mac_addr))
 			eth_setenv_enetaddr("ethaddr", mac_addr);
 	}
-	print_mac_isee(1, mac_addr);
 	writel((GMII1_SEL_RMII | RMII1_IO_CLK_EN),
 	       &cdev->miisel);
 
@@ -323,7 +309,6 @@ int board_eth_init(bd_t *bis)
 				eth_setenv_enetaddr("usbnet_devaddr", mac_addr);
 		}
 		/*Everithing is ready, usb ethernet gadget can be initialized*/
-		print_mac_isee(2, mac_addr);
 		usb_eth_initialize(bis);
 	#endif
 
