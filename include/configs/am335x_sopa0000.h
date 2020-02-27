@@ -37,29 +37,22 @@
 
 /* Module specific Configs --> Defined inside defconfig*/
 
-/*
-ISEE TEST DEPLOY
-+				"ipaddr=192.168.2.101\0" \
-+				"setup_ip=192.168.2.101:192.168.2.171:192.168.2.1:255.255.255.0:S34:eth0:off:192.168.2.220:192.168.2.1\0" \
-+				"serverip=192.168.2.171\0" \
-+				"rootnfs=/opt/nfs-server/SOPA0000/ \0" \
-
--               "root=/dev/nfs " \
--               "ip=${ipaddr} nfsroot=${serverip}:${rootnfs},v3,tcp \0" \
-+               "root=/dev/nfs rw " \
-+               "ip=${setup_ip} nfsroot=${serverip}:${rootnfs},v3,tcp \0" \
-
-
-*/
+/* #define ISEE_HARDWARETEST_ENABLED */
 
 /* Make the verbose messages from UBI stop printing */
 #define CONFIG_UBI_SILENCE_MSG
 #define CONFIG_UBIFS_SILENCE_MSG
 
 #define CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
+
 #ifndef CONFIG_SPL_BUILD
+
+#ifndef ISEE_HARDWARETEST_ENABLED
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	DEFAULT_LINUX_BOOT_ENV \
+	"ethact=cpsw\0" \
+	"ethprime=cpsw\0" \
 	"bootdir=/boot\0" \
 	"bootenv=uEnv.txt\0" \
 	"bootfile=zImage\0" \
@@ -90,11 +83,6 @@ ISEE TEST DEPLOY
 		"${optargs} " \
 		"root=/dev/sda2 " \
 		"rw ext3 rootwait \0" \
-	"usbboot=echo Booting from USB HOST ...; " \
-		"run usbargs; " \
-		"usb start; usb dev 0; " \
-		"run usbload; " \
-		"bootz ${loadaddr} - ${fdtaddr} \0" \
 	"netload=tftpboot ${loadaddr} ${bootfile}; " \
 		"tftpboot ${fdtaddr} ${dtbfile} \0" \
 	"netargs=setenv bootargs console=${console} " \
@@ -113,12 +101,67 @@ ISEE TEST DEPLOY
 			"bootz ${loadaddr} - ${fdtaddr}; " \
 		"fi;" \
 		"usb stop \0"
-#endif /*!CONFIG_SPL_BUILD*/
 
 #define CONFIG_BOOTCOMMAND \
 	"run usbuenvboot;" \
 	"run nandboot;"  \
-	"run netboot;"
+	"run netboot"
+
+#else /* defined ISEE_HARDWARETEST_ENABLED */
+
+#define CONFIG_EXTRA_ENV_SETTINGS \
+	DEFAULT_LINUX_BOOT_ENV \
+	"ethact=cpsw\0" \
+	"ethprime=cpsw\0" \
+	"bootdir=/boot\0" \
+	"bootenv=uEnv.txt\0" \
+	"bootfile=zImage\0" \
+	"dtbfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
+	"serverip=192.168.8.1\0" \
+	"ipaddr=192.168.8.11\0" \
+	"gateway=192.168.8.1\0" \
+	"netmask=255.255.255.0\0" \
+	"dnsserver=192.168.8.1\0" \
+	"machinename=Station01\0" \
+	"rootnfs=/opt/nfs-server/SOPA0000-test-rootfs/\0" \
+	"ipconf=setenv setup_ip ${ipaddr}:${serverip}:${gateway}:${netmask}:${machinename}:eth0:off:${dnsserver}\0" \
+	"console=ttyO0,115200n8\0" \
+	"loadbootenv= usb start; usb dev 0; " \
+		"fatload usb 0:1 ${loadaddr} ${bootenv}; " \
+		"echo Loaded ${bootenv} file in RAM...; " \
+		"usb stop \0" \
+	"importbootenv= echo Importing uEnv.txt variables...; " \
+		"env import -t ${loadaddr} ${filesize}\0" \
+	"mtdids=" MTDIDS_DEFAULT "\0" \
+	"mtdparts=" MTDPARTS_DEFAULT "\0" \
+	"usbload= ext4load usb 0:2 ${loadaddr} ${bootdir}/${bootfile}; " \
+		"ext4load usb 0:2 ${fdtaddr} ${bootdir}/${dtbfile} \0" \
+	"usbargs=setenv bootargs console=${console} " \
+		"${optargs} " \
+		"root=/dev/sda2 " \
+		"rw ext3 rootwait \0" \
+	"netload=if tftpboot ${loadaddr} ${bootfile}; then " \
+			"if tftpboot ${fdtaddr} ${dtbfile}; then " \
+				"bootz ${loadaddr} - ${fdtaddr}; " \
+			"fi; " \
+		"fi\0" \
+	"netargs=run ipconf; setenv bootargs console=${console} root=/dev/nfs rw " \
+		"ip=${setup_ip} nfsroot=${serverip}:${rootnfs},v3,tcp \0" \
+	"netboot=echo Booting from net ...; " \
+		"run netargs; " \
+		"run netload \0" \
+	"usbuenvboot= if run loadbootenv; then " \
+			"run importbootenv; " \
+		"fi\0"
+
+
+#define CONFIG_BOOTCOMMAND \
+	"run usbuenvboot;" \
+	"run netboot"
+
+#endif /*ISEE_HARDWARETEST_ENABLED*/
+
+#endif /*!CONFIG_SPL_BUILD*/
 
 	
 /* NS16550 Configuration */
