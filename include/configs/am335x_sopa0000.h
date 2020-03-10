@@ -117,14 +117,14 @@
 	"bootenv=uEnv.txt\0" \
 	"bootfile=zImage\0" \
 	"dtbfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
-	"serverip=192.168.8.1\0" \
+	"serverip=192.168.8.100\0" \
 	"ipaddr=192.168.8.11\0" \
-	"gateway=192.168.8.1\0" \
+	"gateway=192.168.8.254\0" \
 	"netmask=255.255.255.0\0" \
-	"dnsserver=192.168.8.1\0" \
+	"dnsserver=8.8.8.8\0" \
 	"machinename=Station01\0" \
-	"rootnfs=/opt/nfs-server/SOPA0000-test-rootfs/\0" \
-	"ipconf=setenv setup_ip ${ipaddr}:${serverip}:${gateway}:${netmask}:${machinename}:eth0:off:${dnsserver}\0" \
+	"rootnfs=/opt/nfs-server/SOPA0000-test-rootfs-0.1-7/\0" \
+	"ipconf=setenv setup_ip ${ipaddr}:${serverip}:${gateway}:${netmask}:${machinename}:eth0:off:${dnsserver}:\0" \
 	"console=ttyO0,115200n8\0" \
 	"loadbootenv= usb start; usb dev 0; " \
 		"fatload usb 0:1 ${loadaddr} ${bootenv}; " \

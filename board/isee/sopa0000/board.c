@@ -33,12 +33,6 @@ static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
 
 static struct igep_mf_setup igep0034_eeprom_config;
 
-static struct igep_mf_setup igep0034_eeprom_config_initial = {
-	 .crc32 = 0,              				/* eeprom crc32 */    
-};
-
-int igep_eeprom_valid;
-
 #ifdef CONFIG_SPL_BUILD
 #define SDRAM_K4B2G1646EBIH9 /*SOPA0000 use 256MB RAM K4B2G1646EBIH9*/
 #ifdef SDRAM_H5TQ4G63AFR
@@ -153,7 +147,6 @@ int board_late_init(void)
  */
 int board_init(void)
 {
-	u32 crc_value0 = 0;
 	u32 crc_value = 0;
     u32 crc_save_value = 0;
 
@@ -161,38 +154,38 @@ int board_init(void)
 
 	gpmc_init();
 
+	/* Select bus I2C1 and check if it works properly */
 	i2c_set_bus_num(1);
 	i2c_probe(TPS65910_CTRL_I2C_ADDR);	
 		
-	if(check_eeprom() != 0){
-		printf("eeprom: not found\n");
+	/* Check if eeprom is in the bus */	
+	if(check_eeprom() != 0)
+	{
+		printf("eeprom: not found.\n");
 	}
-	else{
-		
-		crc_value0 = crc32(0, (const unsigned char*) &igep0034_eeprom_config_initial, sizeof(struct igep_mf_setup));
-		
-		igep0034_eeprom_config_initial.crc32 = crc_value0;
-		
-		if(eeprom_write_setup(0, (char*) &igep0034_eeprom_config_initial, sizeof(struct igep_mf_setup))){
-			       printf("eeprom: write fail\n");
-
-		}
+	else
+	{
         /* Read configuration from eeprom */
-        if(eeprom_read_setup(0, (char*) &igep0034_eeprom_config, sizeof(struct igep_mf_setup))){
-                   printf("eeprom: read fail\n");
+        if(eeprom_read_setup(0, (char*) &igep0034_eeprom_config, sizeof(struct igep_mf_setup)))
+        {
+            printf("eeprom: read fail.\n");
     	}       
-             
-       /* Verify crc32 */
-        crc_save_value = igep0034_eeprom_config.crc32;
-        igep0034_eeprom_config.crc32 = 0;
-        crc_value = crc32(0, (const unsigned char*) &igep0034_eeprom_config, sizeof(struct igep_mf_setup));
-        if(crc_save_value != crc_value){
-                printf("eeprom: crc32 failed. Loading mac from environment\n");
-                         
-        }else{
-                   printf("eeprom: crc32 OK! Loading mac from eeprom\n");                  
-                   igep_eeprom_valid = 1;
-        }
+        else
+        {     
+	       	/* Verify crc32 */
+	        crc_save_value = igep0034_eeprom_config.crc32;
+	        igep0034_eeprom_config.crc32 = 0;
+	        crc_value = crc32(0, (const unsigned char*) &igep0034_eeprom_config, sizeof(struct igep_mf_setup));
+	        if(crc_save_value != crc_value)
+	        {
+	            printf("eeprom: crc32 failed.\n");
+	        }
+	        else
+	        {
+                printf("eeprom: crc32 OK.\n");
+                printf("Board UUID: %s\n", igep0034_eeprom_config.board_uuid);
+        	}
+	    }
     }
 
 	return 0;
