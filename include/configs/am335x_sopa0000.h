@@ -62,6 +62,7 @@
 		"fatload usb 0:1 ${loadaddr} ${bootenv} \0" \
 	"importbootenv= echo Importing environment from USB ...; " \
 		"env import -t ${loadaddr} ${filesize}\0" \
+	"usb_pgood_delay=2000\0" \
 	"mtdids=" MTDIDS_DEFAULT "\0" \
 	"mtdparts=" MTDPARTS_DEFAULT "\0" \
 	"nandroot=ubi0:filesystem rw ubi.mtd=3,512\0" \
@@ -123,6 +124,7 @@
 	"netmask=255.255.255.0\0" \
 	"dnsserver=8.8.8.8\0" \
 	"machinename=Station01\0" \
+	"usb_pgood_delay=2000\0" \
 	"rootnfs=/opt/nfs-server/SOPA0000-test-rootfs-0.1-7/\0" \
 	"ipconf=setenv setup_ip ${ipaddr}:${serverip}:${gateway}:${netmask}:${machinename}:eth0:off:${dnsserver}:\0" \
 	"console=ttyO0,115200n8\0" \
