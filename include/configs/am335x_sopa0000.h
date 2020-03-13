@@ -126,7 +126,7 @@
 	"machinename=Station01\0" \
 	"usb_pgood_delay=2000\0" \
 	"rootnfs=/opt/nfs-server/SOPA0000-test-rootfs-0.1-7/\0" \
-	"ipconf=setenv setup_ip ${ipaddr}:${serverip}:${gateway}:${netmask}:${machinename}:eth0:off:${dnsserver}:\0" \
+	"ipconf=setenv setup_ip ${ipaddr}:${serverip}:${gateway}:${netmask}:${machinename}:eth0:off:${dnsserver}::${serverip}\0" \
 	"console=ttyO0,115200n8\0" \
 	"loadbootenv= usb start; usb dev 0; " \
 		"fatload usb 0:1 ${loadaddr} ${bootenv}; " \
