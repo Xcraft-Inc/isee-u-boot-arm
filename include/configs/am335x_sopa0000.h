@@ -53,7 +53,7 @@
 	DEFAULT_LINUX_BOOT_ENV \
 	"ethact=cpsw\0" \
 	"ethprime=cpsw\0" \
-	"bootdir=/boot\0" \
+	"bootdir=\0" \
 	"bootenv=uEnv.txt\0" \
 	"bootfile=zImage\0" \
 	"dtbfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
@@ -67,9 +67,9 @@
 	"mtdparts=" MTDPARTS_DEFAULT "\0" \
 	"nandroot=ubi0:filesystem rw ubi.mtd=3,512\0" \
 	"nandrootfstype=ubifs rootwait\0" \
-	"nandload=ubi part filesystem 512; ubifsmount ubi0; " \
-		"ubifsload ${loadaddr} ${bootdir}/${bootfile}; " \
-		"ubifsload ${fdtaddr} ${bootdir}/${dtbfile} \0" \
+	"nandload=chpart nand0,2;" \
+		"fsload ${loadaddr} ${bootdir}/${bootfile}; " \
+		"fsload ${fdtaddr} ${bootdir}/${dtbfile} \0" \
 	"nandargs=setenv bootargs console=${console} " \
 		"${optargs} " \
 		"root=${nandroot} " \
@@ -218,9 +218,13 @@
 #define CONFIG_SYS_NAND_U_BOOT_OFFS	0x80000
 #define MTDIDS_DEFAULT			"nand0=omap2-nand.0"
 #define MTDPARTS_DEFAULT		"mtdparts=omap2-nand.0:512k(spl),"\
-					"1m(uboot),128k(environment),"\
+					"1m(uboot),12m(kernel),"\
 					"-(filesystem)"
 #define CONFIG_CMD_UBIFS
+#define CONFIG_CMD_JFFS2
+#define CONFIG_JFFS2_NAND
+#define CONFIG_JFFS2_LZO
+
 #define CONFIG_CMD_MTDPARTS
 /* Unsupported features */
 #undef CONFIG_USE_IRQ
