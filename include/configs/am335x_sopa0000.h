@@ -54,6 +54,7 @@
 	"ethact=cpsw\0" \
 	"ethprime=cpsw\0" \
 	"bootdir=\0" \
+	"usbbootdir=/boot\0" \
 	"bootenv=uEnv.txt\0" \
 	"bootfile=zImage\0" \
 	"dtbfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
@@ -78,8 +79,8 @@
 		"run nandargs; " \
 		"run nandload; " \
 		"bootz ${loadaddr} - ${fdtaddr} \0" \
-	"usbload= ext4load usb 0:2 ${loadaddr} ${bootdir}/${bootfile}; " \
-		"ext4load usb 0:2 ${fdtaddr} ${bootdir}/${dtbfile} \0" \
+	"usbload= ext4load usb 0:2 ${loadaddr} ${usbbootdir}/${bootfile}; " \
+		"ext4load usb 0:2 ${fdtaddr} ${usbbootdir}/${dtbfile} \0" \
 	"usbargs=setenv bootargs console=${console} " \
 		"${optargs} " \
 		"root=/dev/sda2 " \
