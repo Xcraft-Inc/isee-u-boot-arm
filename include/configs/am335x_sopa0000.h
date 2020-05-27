@@ -118,9 +118,9 @@
 	"bootenv=uEnv.txt\0" \
 	"bootfile=zImage\0" \
 	"dtbfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
-	"serverip=192.168.8.100\0" \
-	"ipaddr=192.168.8.11\0" \
-	"gateway=192.168.8.254\0" \
+	"serverip=192.168.50.2\0" \
+	"ipaddr=192.168.50.3\0" \
+	"gateway=192.168.50.1\0" \
 	"netmask=255.255.255.0\0" \
 	"dnsserver=8.8.8.8\0" \
 	"machinename=Station01\0" \
