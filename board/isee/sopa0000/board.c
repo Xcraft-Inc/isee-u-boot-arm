@@ -219,7 +219,96 @@ int board_eth_init(bd_t *bis)
 	return ret;
 }
 
-#elif !defined(CONFIG_SPL_BUILD)  && defined(CONFIG_DRIVER_TI_CPSW)
+#elif defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_ETH_SUPPORT)
+
+static void cpsw_control(int enabled)
+{
+	/* VTP can be added here */
+
+	return;
+}
+
+static struct cpsw_slave_data cpsw_slaves[] = {
+	{
+		.slave_reg_ofs	= 0x208,
+		.sliver_reg_ofs	= 0xd80,
+		.phy_addr	= 1,
+		.phy_if		= PHY_INTERFACE_MODE_RMII,
+	},
+};
+
+static struct cpsw_platform_data cpsw_data = {
+	.mdio_base			= CPSW_MDIO_BASE,
+	.cpsw_base			= CPSW_BASE,
+	.mdio_div			= 0xff,
+	.channels			= 8,
+	.cpdma_reg_ofs		= 0x800,
+	.slaves				= 1,
+	.slave_data			= cpsw_slaves,
+	.ale_reg_ofs		= 0xd00,
+	.ale_entries		= 1024,
+	.host_port_reg_ofs	= 0x108,
+	.hw_stats_reg_ofs	= 0x900,
+	.bd_ram_ofs			= 0x2000,
+	.mac_control		= (1 << 5),
+	.control			= cpsw_control,
+	.host_port_num		= 0,
+	.version			= CPSW_CTRL_VERSION_2,
+};
+
+
+int board_eth_init(bd_t *bis)
+{
+	int rv, ret = 0;
+	uint8_t mac_addr[6];
+	uint32_t mac_hi, mac_lo;
+
+	if (!eth_getenv_enetaddr("ethaddr", mac_addr)) {
+		/* try reading mac address from efuse */
+		mac_lo = readl(&cdev->macid0l);
+		mac_hi = readl(&cdev->macid0h);
+		mac_addr[0] = mac_hi & 0xFF;
+		mac_addr[1] = (mac_hi & 0xFF00) >> 8;
+		mac_addr[2] = (mac_hi & 0xFF0000) >> 16;
+		mac_addr[3] = (mac_hi & 0xFF000000) >> 24;
+		mac_addr[4] = mac_lo & 0xFF;
+		mac_addr[5] = (mac_lo & 0xFF00) >> 8;
+		if (is_valid_ethaddr(mac_addr))
+			eth_setenv_enetaddr("ethaddr", mac_addr);
+	}
+	writel((GMII1_SEL_RMII | RMII1_IO_CLK_EN),
+	       &cdev->miisel);
+
+	rv = cpsw_register(&cpsw_data);
+	if (rv < 0)
+		printf("Error %d registering CPSW switch\n", rv);
+	else
+		ret += rv;
+
+	#ifdef CONFIG_SPL_USBETH_SUPPORT
+		/* If OTG Ethernet Gadget is activated generate and assign a MAC*/
+		if (!eth_getenv_enetaddr("usbnet_devaddr", mac_addr)) {
+			/* try reading mac address from efuse */
+			mac_lo = readl(&cdev->macid0l);
+			mac_hi = readl(&cdev->macid0h);
+			mac_addr[0] = mac_hi & 0xFF;
+			mac_addr[1] = (mac_hi & 0xFF00) >> 8;
+			mac_addr[2] = (mac_hi & 0xFF0000) >> 16;
+			mac_addr[3] = (mac_hi & 0xFF000000) >> 24;
+			mac_addr[4] = mac_lo & 0xFF;
+			mac_addr[5] = (mac_lo & 0xFF00) >> 8;
+			/*Assign the mac to the "usbnet_devaddr" variable*/
+			if (is_valid_ethaddr(mac_addr))
+				eth_setenv_enetaddr("usbnet_devaddr", mac_addr);
+		}
+		/*Everithing is ready, usb ethernet gadget can be initialized*/
+		usb_eth_initialize(bis);
+	#endif
+
+	return ret;
+}
+
+#elif !defined(CONFIG_SPL_BUILD) && defined(CONFIG_DRIVER_TI_CPSW)
 
 static void cpsw_control(int enabled)
 {
