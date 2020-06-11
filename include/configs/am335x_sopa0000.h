@@ -124,7 +124,7 @@
 	"gateway=192.168.50.1\0" \
 	"netmask=255.255.255.0\0" \
 	"dnsserver=8.8.8.8\0" \
-	"machinename=Station01\0" \
+	"machinename=StationNone\0" \
 	"usb_pgood_delay=2000\0" \
 	"rootnfs=/opt/nfs-server/SOPA0000-test-rootfs-0.1-7/\0" \
 	"ipconf=setenv setup_ip ${ipaddr}:${serverip}:${gateway}:${netmask}:${machinename}:eth0:off:${dnsserver}::${serverip}\0" \
