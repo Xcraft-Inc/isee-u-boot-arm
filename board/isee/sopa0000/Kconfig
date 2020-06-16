@@ -12,4 +12,8 @@ config SYS_SOC
 config SYS_CONFIG_NAME
 	default "am335x_sopa0000"
 
+config HWTEST
+	bool "ENABLE HWTEST"
+	default false
+
 endif

@@ -37,7 +37,8 @@
 
 /* Module specific Configs --> Defined inside defconfig*/
 
-/* #define ISEE_HARDWARETEST_ENABLED */
+/*#define ISEE_HARDWARETEST_ENABLED*/ 
+
 
 /* Make the verbose messages from UBI stop printing */
 #define CONFIG_UBI_SILENCE_MSG
@@ -47,7 +48,7 @@
 
 #ifndef CONFIG_SPL_BUILD
 
-#ifndef ISEE_HARDWARETEST_ENABLED
+#ifndef CONFIG_HWTEST
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	DEFAULT_LINUX_BOOT_ENV \
@@ -109,7 +110,7 @@
 	"run nandboot;"  \
 	"run netboot"
 
-#else /* defined ISEE_HARDWARETEST_ENABLED */
+#else /* defined CONFIG_HWTEST */
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	DEFAULT_LINUX_BOOT_ENV \
@@ -158,7 +159,7 @@
 	"run usbuenvboot;" \
 	"run netboot"
 
-#endif /*ISEE_HARDWARETEST_ENABLED*/
+#endif /*CONFIG_HWTEST*/
 
 #endif /*!CONFIG_SPL_BUILD*/
 
