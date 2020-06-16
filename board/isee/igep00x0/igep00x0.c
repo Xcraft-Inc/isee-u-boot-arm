@@ -212,6 +212,7 @@ static int load_eeprom (void)
 				igep_eeprom_valid = 1;
 				result = 0;
 				printf("eeprom: crc32 OK! Loading mac from eeprom\n");
+				printf("Board UUID: %s\n", igep00x0_eeprom_config.board_uuid);
 			}
 			else
 				printf("eeprom: crc32 Failed, using defaults\n");	
