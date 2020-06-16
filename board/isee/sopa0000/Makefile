@@ -13,3 +13,4 @@ endif
 obj-y += ../common/eeprom.o
 
 obj-y += board.o
+obj-y += led.o
