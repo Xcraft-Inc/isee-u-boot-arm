@@ -96,9 +96,8 @@
 
 #define MTDIDS_DEFAULT			"nand0=omap2-nand.0"
 #define MTDPARTS_DEFAULT		"mtdparts=omap2-nand.0:512k(spl),"\
-					"1m(uboot),10m(boot),"\
-					"-(rootfs)"
-
+					"1m(uboot),12m(kernel),"\
+					"-(filesystem)"
 
 #ifndef CONFIG_SPL_BUILD
 
