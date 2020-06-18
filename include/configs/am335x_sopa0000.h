@@ -48,7 +48,93 @@
 
 #ifndef CONFIG_SPL_BUILD
 
+/* ------------------ Common environment ------------------ */
+
+#define ENV_NFS_ROOTFS \
+"netmask=255.255.255.0\0" \
+"dnsserver=8.8.8.8\0" \
+"machinename=noname\0" \
+"ipaddr=0.0.0.0\0" \
+"serverip=0.0.0.0\0" \
+"gateway=0.0.0.0\0" \
+"rootnfs=/\0" \
+"ipconf=setenv setup_ip ${ipaddr}:${serverip}:${gateway}:${netmask}:${machinename}:eth0:off:${dnsserver}::${serverip}\0" \
+"netload=if tftpboot ${loadaddr} ${bootfile}; then " \
+			"if tftpboot ${fdtaddr} ${dtbfile}; then " \
+				"bootz ${loadaddr} - ${fdtaddr}; " \
+			"else " \
+				"echo Failed to get DTB file from TFTP; " \
+				"run errorstate; " \
+			"fi; " \
+		"else " \
+			"echo Failed to get kernel image from TFTP; " \
+			"run errorstate; " \
+		"fi\0" \
+"netargs=run ipconf; " \
+		"setenv bootargs console=${console} root=/dev/nfs rw ip=${setup_ip} nfsroot=${serverip}:${rootnfs},v3,tcp ${kparams}\0" \
+"netboot=echo Booting from net ...; " \
+		"run netargs; " \
+		"run netload \0"
+
+#define ENV_ERRORSTATE \
+	"errorstate=led 0 off; " \
+				"led 1 on; " \
+				"sleep 60; " \
+				"reset;"
+
+#define ENV_LOAD_UENV_USB \
+"usbuenvboot=usb start; " \
+			"if usb dev 0; " \
+				"if fatload usb 0:1 ${loadaddr} ${bootenv}; then " \
+					"run importbootenv; " \
+					"echo Loaded ${bootenv} file in RAM...; " \
+				"else " \
+					"echo Not found ${bootenv} file in USB...; " \
+				"fi; " \
+			"else " \
+				"echo No USB device found; " \
+			"fi; " \
+			"usb stop \0" \
+
+#define ENV_LOAD_UENV_USB_TEST \
+"usbuenvboot=usb start; " \
+			"if usb dev 0; then " \
+				"if fatload usb 0:1 ${loadaddr} ${bootenv}; then " \
+					"run importbootenv; " \
+					"echo Loaded ${bootenv} file in RAM...; " \
+				"else " \
+					"echo Not found ${bootenv} file in USB...; " \
+					"run errorstate; " \
+				"fi; " \
+			"else " \
+				"echo No USB device found; " \
+				"run errorstate; " \
+			"fi; " \
+			"usb stop \0" 
+
+#define ENV_USB_LOAD \
+"usbload=ext4load usb 0:2 ${loadaddr} ${bootdir}/${bootfile}; " \
+		"ext4load usb 0:2 ${fdtaddr} ${bootdir}/${dtbfile} \0" \
+"usbargs=setenv bootargs console=${console} " \
+		"${optargs} " \
+		"root=/dev/sda2 " \
+		"rw ext3 rootwait ${kparams} \0"
+
+#define ENV_LOAD_UENV_NAND \
+"loadnanduenv=nandload=chpart nand0,2;" \
+			"fsload ${loadaddr} ${bootdir}/${bootenv}; " \
+"nanduenvboot=if run loadnanduenv; then " \
+				"run importbootenv; " \
+			"fi\0"
+
+#define ENV_NAND_LOAD \
+"nandload=chpart nand0,2;" \
+		"fsload ${loadaddr} ${bootdir}/${bootfile}; " \
+		"fsload ${fdtaddr} ${bootdir}/${dtbfile} \0"
+
 #ifndef CONFIG_HWTEST
+
+/* ------------------ Production Environment ------------------ */
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	DEFAULT_LINUX_BOOT_ENV \
@@ -112,50 +198,28 @@
 
 #else /* defined CONFIG_HWTEST */
 
+/* ------------------ Hardware Test Environment ------------------ */
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	DEFAULT_LINUX_BOOT_ENV \
 	"ethact=cpsw\0" \
 	"ethprime=cpsw\0" \
 	"bootdir=/boot\0" \
+	"console=ttyO0,115200n8\0" \
 	"bootenv=uEnv.txt\0" \
 	"bootfile=zImage\0" \
 	"dtbfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
-	"netmask=255.255.255.0\0" \
-	"dnsserver=8.8.8.8\0" \
 	"usb_pgood_delay=2000\0" \
-	"rootnfs=/opt/nfs-server/SOPA0000-test-rootfs-0.1-7/\0" \
-	"ipconf=setenv setup_ip ${ipaddr}:${serverip}:${gateway}:${netmask}:${machinename}:eth0:off:${dnsserver}::${serverip}\0" \
-	"console=ttyO0,115200n8\0" \
-	"loadbootenv= usb start; usb dev 0; " \
-		"fatload usb 0:1 ${loadaddr} ${bootenv}; " \
-		"echo Loaded ${bootenv} file in RAM...; " \
-		"usb stop \0" \
 	"importbootenv= echo Importing uEnv.txt variables...; " \
-		"env import -t ${loadaddr} ${filesize}\0" \
+	"env import -t ${loadaddr} ${filesize}\0" \
 	"mtdids=" MTDIDS_DEFAULT "\0" \
 	"mtdparts=" MTDPARTS_DEFAULT "\0" \
-	"usbload= ext4load usb 0:2 ${loadaddr} ${bootdir}/${bootfile}; " \
-		"ext4load usb 0:2 ${fdtaddr} ${bootdir}/${dtbfile} \0" \
-	"usbargs=setenv bootargs console=${console} " \
-		"${optargs} " \
-		"root=/dev/sda2 " \
-		"rw ext3 rootwait \0" \
-	"netload=if tftpboot ${loadaddr} ${bootfile}; then " \
-			"if tftpboot ${fdtaddr} ${dtbfile}; then " \
-				"bootz ${loadaddr} - ${fdtaddr}; " \
-			"fi; " \
-		"fi\0" \
-	"netargs=run ipconf; setenv bootargs console=${console} root=/dev/nfs rw " \
-		"ip=${setup_ip} nfsroot=${serverip}:${rootnfs},v3,tcp \0" \
-	"netboot=echo Booting from net ...; " \
-		"run netargs; " \
-		"run netload \0" \
-	"usbuenvboot= if run loadbootenv; then " \
-			"run importbootenv; " \
-		"fi\0"
-
+	ENV_NFS_ROOTFS \
+	ENV_LOAD_UENV_USB_TEST \
+	ENV_ERRORSTATE
 
 #define CONFIG_BOOTCOMMAND \
+	"led 0 on;" \
 	"run usbuenvboot;" \
 	"run netboot"
 
