@@ -12,3 +12,7 @@ endif
 
 obj-y += ../common/eeprom.o
 obj-y += board.o
+
+ifdef CONFIG_LED_STATUS
+obj-y += ../common/led.o
+endif

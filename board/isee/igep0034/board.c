@@ -27,6 +27,7 @@
 #include "../common/igep_common.h"
 #include <power/tps65910.h>
 #include "board.h"
+#include "../common/led.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -189,6 +190,15 @@ err_free_gpio:
 #define REQUEST_AND_SET_GPIO(N)	request_and_set_gpio(N, #N, 1);
 #define REQUEST_AND_CLR_GPIO(N)	request_and_set_gpio(N, #N, 0);
 
+led_definition myldef[] = {
+	
+	{"red", GPIO_RED_LED, CONFIG_LED_STATUS_BIT},		
+	{"green", GPIO_GREEN_LED, CONFIG_LED_STATUS_BIT1},		
+	{ 0, 0, -1 }
+};
+
+led_definition *ldef = (led_definition*) &myldef;
+
 /*
  * Basic board specific setup.  Pinmux has been handled already.
  */
@@ -208,11 +218,11 @@ int board_init(void)
 */
 	gpmc_init();
 	
-	REQUEST_AND_CLR_GPIO(GPIO_RED_LED);
-	REQUEST_AND_SET_GPIO(GPIO_GREEN_LED);
+	// REQUEST_AND_CLR_GPIO(GPIO_RED_LED);
+	// REQUEST_AND_SET_GPIO(GPIO_GREEN_LED);
 
-	gpio_set_value(GPIO_RED_LED, 0);
-	gpio_set_value(GPIO_GREEN_LED, 1);
+	// gpio_set_value(GPIO_RED_LED, 0);
+	// gpio_set_value(GPIO_GREEN_LED, 1);
 	
 	i2c_set_bus_num(1);
 	i2c_probe(TPS65910_CTRL_I2C_ADDR);	

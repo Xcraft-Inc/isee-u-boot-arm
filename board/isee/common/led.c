@@ -31,14 +31,14 @@ int gpio_name_to_num(char* name)
 #ifdef CONFIG_LED_STATUS_RED
 void red_led_off(void)
 {
-#if (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000)
+#if (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000) || (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0034)
 	__led_set(gpio_name_to_num("red"), CONFIG_LED_STATUS_OFF);
 #endif
 }
 
 void red_led_on(void)
 {	
-#if (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000)	
+#if (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000) || (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0034)	
 	__led_set(gpio_name_to_num("red"), CONFIG_LED_STATUS_ON);
 #endif	
 #endif
@@ -87,7 +87,7 @@ void green_led_off(void)
 #elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
 	__led_set(IGEP0020_LED_USR0, 0);
 	__led_set(IGEP0020_LED_USR3, 0);
-#elif (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000)
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000) || (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0034)
 	__led_set(gpio_name_to_num("green"), CONFIG_LED_STATUS_OFF);
 #endif	
 }
@@ -100,7 +100,7 @@ void green_led_on(void)
 #elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
 	__led_set(IGEP0020_LED_USR0, 1);
 	__led_set(IGEP0020_LED_USR3, 1);
-#elif (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000)
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000) || (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0034)
 	__led_set(gpio_name_to_num("green"), CONFIG_LED_STATUS_ON);	
 #endif	
 }
@@ -115,7 +115,7 @@ void blue_led_off(void)
 #elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
 	__led_set(IGEP0020_LED_USR1, 0);
 	__led_set(IGEP0020_LED_USR2, 0);
-#elif (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000)
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000) || (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0034)
 	__led_set(gpio_name_to_num("blue"), CONFIG_LED_STATUS_OFF);
 #endif	
 }
@@ -128,7 +128,7 @@ void blue_led_on(void)
 #elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
 	__led_set(IGEP0020_LED_USR1, 1);
 	__led_set(IGEP0020_LED_USR2, 1);
-#elif (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000)
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000) || (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0034)
 	__led_set(gpio_name_to_num("blue"), CONFIG_LED_STATUS_ON);
 #endif	
 }
@@ -274,7 +274,7 @@ static int get_led_gpio(led_id_t mask)
 #endif
 	return 0;
 }
-#elif (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000)
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000) || (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0034)
 
 /* Convert Status from gpio mas */
 static int get_led_gpio(led_id_t mask)

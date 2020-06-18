@@ -18,4 +18,8 @@ config OTG_AS_HOST
 	help
 	  Select this option if you want to set the USB0 (OTG) as a host. If you select it the USB1 will not work as a HOST
 
+config HWTEST
+	bool "ENABLE HWTEST"
+	default false
+
 endif
