@@ -12,78 +12,79 @@
 #include <asm/io.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/gpio.h>
+#include "led.h"
 
-/* GPIO pins for the LEDs */
-#define IGEP_SOPA_LED_USR0	53
-#define IGEP_SOPA_LED_USR1	54
-
-#ifndef CONFIG_LED_STATUS
-typedef unsigned long led_id_t;
-#endif
-
-static int get_led_gpio(led_id_t mask)
+static int get_led_gpio (led_id_t mask)
 {
-#ifdef CONFIG_LED_STATUS0
-	if (CONFIG_LED_STATUS_BIT == mask){
-		return IGEP_SOPA_LED_USR0;
+	int i = 0;
+	while(ldef[i].led_name[0] != 0){
+		if(mask == ldef[i].led_st){
+			return ldef[i].gpio_num;
+		}
+		i++;
 	}
-#endif
-#ifdef CONFIG_LED_STATUS1
-	if (CONFIG_LED_STATUS_BIT1 == mask){
-		return IGEP_SOPA_LED_USR1;
+	return 0;
+}
+
+int gpio_name_to_num(char* name)
+{
+	int i = 0;
+	while(ldef[i].led_name[0] != 0){
+		if(!strcmp(name, ldef[i].led_name)){
+			return ldef[i].gpio_num;
+		}
+		i++;
 	}
-#endif
-	return -1;
+	return 0;
 }
 
 #ifdef CONFIG_LED_STATUS_GREEN
 void green_led_off(void)
 {
-	__led_set(IGEP_SOPA_LED_USR0, 0);
+	__led_set(gpio_name_to_num("green"), CONFIG_LED_STATUS_OFF);
 }
 
 void green_led_on(void)
 {	
-	__led_set(IGEP_SOPA_LED_USR0, 1);
+	__led_set(gpio_name_to_num("green"), CONFIG_LED_STATUS_ON);
 }
 #endif
 
 #ifdef CONFIG_LED_STATUS_BLUE
 void blue_led_off(void)
 {
-	__led_set(IGEP_SOPA_LED_USR0, 0);
+	__led_set(gpio_name_to_num("blue"), CONFIG_LED_STATUS_OFF);
 }
 
 void blue_led_on(void)
 {	
-	__led_set(IGEP_SOPA_LED_USR0, 1);
+	__led_set(gpio_name_to_num("blue"), CONFIG_LED_STATUS_ON);
 }
 #endif
 
 #ifdef CONFIG_LED_STATUS_RED
 void red_led_off(void)
 {
-	__led_set(IGEP_SOPA_LED_USR1, 0);
+	__led_set(gpio_name_to_num("red"), CONFIG_LED_STATUS_OFF);
 }
 
 void red_led_on(void)
 {	
-	__led_set(IGEP_SOPA_LED_USR1, 1);
-}
+	__led_set(gpio_name_to_num("red"), CONFIG_LED_STATUS_ON);
 #endif
 
 
 #ifdef CONFIG_LED_STATUS_YELLOW
 void yellow_led_off(void)
 {
-	__led_set(IGEP_SOPA_LED_USR0, 0);
-	__led_set(IGEP_SOPA_LED_USR1, 0);
+	__led_set(gpio_name_to_num("green"), CONFIG_LED_STATUS_OFF);
+	__led_set(gpio_name_to_num("yellow"), CONFIG_LED_STATUS_OFF);
 }
 
 void yellow_led_on(void)
 {	
-	__led_set(IGEP_SOPA_LED_USR0, 1);
-	__led_set(IGEP_SOPA_LED_USR1, 1);
+	__led_set(gpio_name_to_num("green"), CONFIG_LED_STATUS_ON);
+	__led_set(gpio_name_to_num("yellow"), CONFIG_LED_STATUS_ON);
 }
 #endif
 

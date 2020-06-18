@@ -27,6 +27,7 @@
 #include "../common/igep_common.h"
 #include <power/tps65910.h>
 #include "board.h"
+#include "led.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
@@ -141,6 +142,15 @@ int board_late_init(void)
 	return 0;
 }
 #endif
+
+led_definition myldef[] = {
+	
+	{"green", 53, CONFIG_LED_STATUS_BIT},
+	{"yellow", 54, CONFIG_LED_STATUS_BIT1},
+	{ 0, 0, -1 }
+};
+
+led_definition *ldef = (led_definition*) &myldef;
 
 /*
  * Basic board specific setup.  Pinmux has been handled already.
