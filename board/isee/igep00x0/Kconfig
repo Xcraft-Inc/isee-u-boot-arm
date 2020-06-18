@@ -9,4 +9,8 @@ config SYS_VENDOR
 config SYS_CONFIG_NAME
 	default "omap3_igep00x0"
 
+config HWTEST
+	bool "ENABLE HWTEST"
+	default false
+
 endif
