@@ -27,7 +27,7 @@
 #include "../common/igep_common.h"
 #include <power/tps65910.h>
 #include "board.h"
-#include "led.h"
+#include "../common/led.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
@@ -143,10 +143,13 @@ int board_late_init(void)
 }
 #endif
 
+#define IGEP_SOPA_LEDMODY	54	/* led_mod_y_gpio1_22 */
+#define IGEP_SOPA_LEDMODG	53	/* led_mod_g_gpio1_21 */
+
 led_definition myldef[] = {
 	
-	{"green", 53, CONFIG_LED_STATUS_BIT},
-	{"yellow", 54, CONFIG_LED_STATUS_BIT1},
+	{"green", IGEP_SOPA_LEDMODG, CONFIG_LED_STATUS_BIT},		
+	{"yellow", IGEP_SOPA_LEDMODY, CONFIG_LED_STATUS_BIT1},		
 	{ 0, 0, -1 }
 };
 

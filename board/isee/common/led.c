@@ -12,6 +12,56 @@
 #include <asm/gpio.h>
 #include <twl4030.h>
 
+#include "led.h"
+
+/* Return gpio number from Name */
+int gpio_name_to_num(char* name)
+{
+	int i = 0;
+	while(ldef[i].led_name[0] != 0){
+		if(!strcmp(name, ldef[i].led_name)){
+			return ldef[i].gpio_num;
+		}
+		i++;
+	}
+	return 0;
+}
+
+
+#ifdef CONFIG_LED_STATUS_RED
+void red_led_off(void)
+{
+#if (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000)
+	__led_set(gpio_name_to_num("red"), CONFIG_LED_STATUS_OFF);
+#endif
+}
+
+void red_led_on(void)
+{	
+#if (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000)	
+	__led_set(gpio_name_to_num("red"), CONFIG_LED_STATUS_ON);
+#endif	
+#endif
+
+
+#ifdef CONFIG_LED_STATUS_YELLOW
+void yellow_led_off(void)
+{
+#if (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000)	
+	__led_set(gpio_name_to_num("green"), CONFIG_LED_STATUS_OFF);
+	__led_set(gpio_name_to_num("yellow"), CONFIG_LED_STATUS_OFF);
+#endif	
+}
+
+void yellow_led_on(void)
+{	
+#if (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000)	
+	__led_set(gpio_name_to_num("green"), CONFIG_LED_STATUS_ON);
+	__led_set(gpio_name_to_num("yellow"), CONFIG_LED_STATUS_ON);
+#endif	
+}
+#endif
+
 /* GPIO pins for the LEDs */
 #define IGEP0030_LED_USR0	16
 #define IGEP0030_LED_USR1	168
@@ -37,6 +87,8 @@ void green_led_off(void)
 #elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
 	__led_set(IGEP0020_LED_USR0, 0);
 	__led_set(IGEP0020_LED_USR3, 0);
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000)
+	__led_set(gpio_name_to_num("green"), CONFIG_LED_STATUS_OFF);
 #endif	
 }
 
@@ -48,6 +100,8 @@ void green_led_on(void)
 #elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
 	__led_set(IGEP0020_LED_USR0, 1);
 	__led_set(IGEP0020_LED_USR3, 1);
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000)
+	__led_set(gpio_name_to_num("green"), CONFIG_LED_STATUS_ON);	
 #endif	
 }
 #endif
@@ -61,6 +115,8 @@ void blue_led_off(void)
 #elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
 	__led_set(IGEP0020_LED_USR1, 0);
 	__led_set(IGEP0020_LED_USR2, 0);
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000)
+	__led_set(gpio_name_to_num("blue"), CONFIG_LED_STATUS_OFF);
 #endif	
 }
 
@@ -72,6 +128,8 @@ void blue_led_on(void)
 #elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
 	__led_set(IGEP0020_LED_USR1, 1);
 	__led_set(IGEP0020_LED_USR2, 1);
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000)
+	__led_set(gpio_name_to_num("blue"), CONFIG_LED_STATUS_ON);
 #endif	
 }
 #endif
@@ -216,6 +274,21 @@ static int get_led_gpio(led_id_t mask)
 #endif
 	return 0;
 }
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_SOPA0000)
+
+/* Convert Status from gpio mas */
+static int get_led_gpio(led_id_t mask)
+{
+	int i = 0;
+	while(ldef[i].led_name[0] != 0){
+		if(mask == ldef[i].led_st){
+			return ldef[i].gpio_num;
+		}
+		i++;
+	}
+	return 0;
+}
+
 #endif
 
 void __led_init (led_id_t mask, int state)
