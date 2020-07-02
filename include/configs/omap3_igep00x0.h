@@ -101,7 +101,53 @@
 
 #ifndef CONFIG_SPL_BUILD
 
-/* Environment */
+#define ENV_NFS_ROOTFS \
+"netmask=255.255.255.0\0" \
+"dnsserver=8.8.8.8\0" \
+"machinename=noname\0" \
+"ipaddr=0.0.0.0\0" \
+"serverip=0.0.0.0\0" \
+"gateway=0.0.0.0\0" \
+"rootnfs=/\0" \
+"ipconf=setenv setup_ip ${ipaddr}:${serverip}:${gateway}:${netmask}:${machinename}:eth0:off:${dnsserver}::${serverip}\0" \
+"netload=if tftpboot ${loadaddr} ${bootfile}; then " \
+			"if tftpboot ${fdtaddr} ${dtbfile}; then " \
+				"bootz ${loadaddr} - ${fdtaddr}; " \
+			"else " \
+				"echo Failed to get DTB file from TFTP; " \
+				"run errorstate; " \
+			"fi; " \
+		"else " \
+			"echo Failed to get kernel image from TFTP; " \
+			"run errorstate; " \
+		"fi\0" \
+"netargs=run ipconf; " \
+		"setenv bootargs console=${console} root=/dev/nfs rw ip=${setup_ip} nfsroot=${serverip}:${rootnfs},v3,tcp ${kparams}\0" \
+"netboot=echo Booting from net ...; " \
+		"run netargs; " \
+		"run netload \0" 
+
+#define ENV_LOAD_UENV_SD_TEST \
+	"sduenvboot=mmc dev ${mmcdev};" \
+				"if mmc rescan; then " \
+					"if fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${bootenv}; then " \
+						"echo Loaded ${bootenv} file in RAM...; " \
+						"run importbootenv; " \
+					"else " \
+						"echo Not found ${bootenv} file in SD...; " \
+						"run errorstate; " \
+					"fi; " \
+				"else " \
+					"echo No SD device found; " \
+					"run errorstate; " \
+				"fi\0 "
+
+#define ENV_ERRORSTATE \
+	"errorstate=led 0 off; " \
+				"led 1 on; " \
+				"sleep 60; " \
+				"reset;"
+
 #define ENV_DEVICE_SETTINGS \
 	"stdin=serial\0" \
 	"stdout=serial\0" \
@@ -150,7 +196,9 @@
 			"bootz ${loadaddr} - ${fdtaddr}\0" \
 */
 
-#ifndef __ISEE_BOARD_TEST__
+#ifndef CONFIG_HWTEST
+
+/* ------------------ Production Environment ------------------ */
 
 #define ENV_LOAD_ALGORYTHM \
 	"bootenv=uEnv.txt\0" \
@@ -216,117 +264,11 @@
 		"echo Booting Kernel...; " \
 		"bootz ${loadaddr} - ${fdtaddr} \0" \
 
-#else
-
-#define ENV_LOAD_ALGORYTHM \
-	"bootenv=uEnv.txt\0" \
-	"bootdir=\0" \
-	"env_size=800\0" \
-	"devnum=0\0" \
-	"bootstage=0\0" \
-	"testdef=IGEP0000-D-TEST\0" \
-	"console=ttyO2,115200n8\0" \
-	"importbootenv=env import -t ${loadaddr} ${filesize}\0" \
-	"setup_ip=setenv setup_ip ${ipaddr}:${serverip}:${gateway}:${netmask}:${hostname}:eth0:off:${dns-server}:${ntp-server} \0" \
-	"loadnandzImage=fsload ${loadaddr} ${bootdir}${bootfile} \0"\
-	"loadnandfdt=fsload ${fdtaddr} ${bootdir}${fdtfile} \0" \
-	"nandboot=echo Booting from Nand second stage; " \
-		"if run loadnandzImage; then " \
-			"if run loadnandfdt; then " \
-				"run setup_ip; " \
-				"run netargs; " \
-				"led green on; " \
-				"echo Booting Kernel...; " \
-				"bootz ${loadaddr} - ${fdtaddr} " \
-			"else " \
-				"echo Nand load failed -> go stage 3 with netboot. " \
-				"led green off; " \
-				"led blue on; " \
-				"setenv bootstage 3; " \
-				"run netboot; " \
-			"fi; " \
-		"else " \
-			"echo Nand load failed -> go stage 3 with netboot. " \
-			"led green off; " \
-			"led blue on; " \
-			"setenv bootstage 3; " \
-			"run netboot; " \
-		"fi; \0" \
-	"nandboot2=echo Booting from Nand; " \
-		"run loadnandzImage; " \
-		"run loadnandfdt; " \
-		"run setup_ip; " \
-		"run netargs; " \
-		"echo Booting Kernel...; " \
-		"bootz ${loadaddr} - ${fdtaddr} \0" \
-	"netloadzImage=tftpboot ${loadaddr} ${bootfile}; \0" \
-	"netloaddtb=tftpboot ${fdtaddr} ${fdtfile} \0" \
-	"netload=tftpboot ${loadaddr} ${bootfile}; " \
-		"tftpboot ${fdtaddr} ${fdtfile} \0" \
-	"netargs=setenv bootargs console=${console} " \
-		"${optargs} " \
-		"root=/dev/nfs " \
-		"ip=${setup_ip} nfsroot=${serverip}:${rootnfs},v3,tcp " \
-		"bootstage=${bootstage} \0" \
-	"netboot=echo Booting from NET; " \
-		"run netloadzImage; " \
-		"run netloaddtb; " \
-		"run setup_ip; " \
-		"run netargs; " \
-		"echo Booting Kernel...; " \
-		"bootz ${loadaddr} - ${fdtaddr} \0" \
-	"test=run testnand; run check_stage; run goNextStage; \0" \
-	"testnand=nand read ${loadaddr} SPL \0" \
-	"check_stage=chpart boot; " \
-		"if run testnand; then " \
-			"if fsload ${loadaddr} ${bootenv}; then " \
-				"setenv bootstage 2; " \
-				"run importbootenv; " \
-			"else " \
-				"if fatload mmc ${devnum} ${loadaddr} ${bootenv} ; then " \
-					"setenv bootstage 1; " \
-					"run importbootenv; " \
-				"else " \
-					"setenv bootstage 3; " \
-				"fi; " \
-			"fi; " \
-		"else " \
-			"if fatload mmc ${devnum} ${loadaddr} ${bootenv} ; then " \
-				"setenv bootstage 1; " \
-				"run importbootenv; " \
-			"else " \
-				"setenv bootstage 3; " \
-			"fi; " \
-		"fi; \0" \
-	"goNextStage=" \
-		"if test ${bootstage} = 3 ; then " \
-			"run fatalErrorTestEnv; " \
-		"else " \
-			"if test ${bootstage} = 1 ; then " \
-				"run netboot; " \
-			"else " \
-				"if test ${bootstage} = 2 ; then " \
-					"run nandboot; " \
-				"else " \
-					"run fatalErrorTestEnv; " \
-				"fi; " \
-			"fi; " \
-		"fi; \0" \
-	"fatalErrorTestEnv=Test Enviroment Fatal Error. " \
-						"while true; do led all toggle; sleep 1; done; \0" \
-	"fatalErrorHwTest=while true; do led blue toggle; sleep 1; done; \0" \
-
-#endif
-
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	ENV_SELECTFDT \
 	ENV_DEVICE_SETTINGS \
 	MEM_LAYOUT_SETTINGS \
 	ENV_LOAD_ALGORYTHM \
-
-#endif
-
-#ifndef __ISEE_BOARD_TEST__
 
 #define CONFIG_BOOTCOMMAND \
 	"run selectfdt;" \
@@ -336,10 +278,34 @@
 
 #else
 
-#define CONFIG_BOOTCOMMAND \
-	"run test;" \
+/* ------------------ Hardware Test Environment ------------------ */
 
-#endif	
+#define CONFIG_EXTRA_ENV_SETTINGS \
+	DEFAULT_LINUX_BOOT_ENV \
+	"ethact=cpsw\0" \
+	"ethprime=cpsw\0" \
+	"bootdir=/boot\0" \
+	"console=ttyO2,115200n8\0" \
+	"bootenv=uEnv.txt\0" \
+	"bootfile=zImage\0" \
+	"dtbfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
+	"usb_pgood_delay=2000\0" \
+	"importbootenv= echo Importing uEnv.txt variables...; " \
+	"env import -t ${loadaddr} ${filesize}\0" \
+	"mtdids=" MTDIDS_DEFAULT "\0" \
+	"mtdparts=" MTDPARTS_DEFAULT "\0" \
+	ENV_NFS_ROOTFS \
+	ENV_LOAD_UENV_SD_TEST \
+	ENV_ERRORSTATE
+
+#define CONFIG_BOOTCOMMAND \
+	"led 0 on;" \
+	"run sduenvboot;" \
+	"run netboot"
+
+#endif/*CONFIG_HWTEST*/
+
+#endif /*!CONFIG_SPL_BUILD*/
 
 #include <config_distro_bootcmd.h>
 
