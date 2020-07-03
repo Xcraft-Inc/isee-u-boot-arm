@@ -101,6 +101,14 @@
 
 #ifndef CONFIG_SPL_BUILD
 
+
+#define ENV_SET_MODELANDVARIANT \
+	"setmodelandvariant=if printenv bmodel; then " \
+							"if printenv bvariant; then " \
+								"setenv kparams ${kparams} bmodel=${bmodel} bvariant=${bvariant};" \
+							"fi;" \
+						"fi\0 "
+
 #define ENV_NFS_ROOTFS \
 "netmask=255.255.255.0\0" \
 "dnsserver=8.8.8.8\0" \
@@ -146,7 +154,7 @@
 	"errorstate=led 0 off; " \
 				"led 1 on; " \
 				"sleep 60; " \
-				"reset;"
+				"reset; \0"
 
 #define ENV_DEVICE_SETTINGS \
 	"stdin=serial\0" \
@@ -296,11 +304,14 @@
 	"mtdparts=" MTDPARTS_DEFAULT "\0" \
 	ENV_NFS_ROOTFS \
 	ENV_LOAD_UENV_SD_TEST \
+	ENV_SET_MODELANDVARIANT \
 	ENV_ERRORSTATE
+	
 
 #define CONFIG_BOOTCOMMAND \
 	"led 0 on;" \
 	"run sduenvboot;" \
+	"run setmodelandvariant;" \
 	"run netboot"
 
 #endif/*CONFIG_HWTEST*/
