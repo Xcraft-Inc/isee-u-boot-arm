@@ -29,6 +29,7 @@
 #include <mtd_node.h>
 #include <fdt_support.h>
 #include "igep00x0.h"
+#include "../common/led.h"
 
 #include "../common/eeprom.h"
 #include "../common/igep_common.h"
@@ -428,29 +429,43 @@ void set_default_fdt(void)
 }
 
 void reset_usb_host_t(void){
-	/*
-	int gusbh_nrst=0;
-	switch (gd->bd->bi_arch_number) {
-	case MACH_TYPE_IGEP0020:
-		gusbh_nrst=24;
-		break;
-	case MACH_TYPE_IGEP0030:
-		gusbh_nrst=54;
-		if (!gpio_request(23, "usbh_b0010rb_hub_rst")) {
-			gpio_direction_output(23, 1);
-			mdelay(2);
-			gpio_set_value(23, 0);
-			mdelay(2);
-		}
-		break;
-	}
-	if (!gpio_request(gusbh_nrst, "usbh_nrst")) {
-		gpio_direction_output(gusbh_nrst, 0);
+	printf("reset_usb_host_t\n");
+
+#if (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0020)
+	/* Turn ON USB Transceiver */
+	printf("match igep0020\n");
+	if (!gpio_request(24, "usbh_nrst")) {
+		/* First we turn on power */
+		twl4030_set_ledA(1);
+	
 		mdelay(2);
-		gpio_set_value(gusbh_nrst, 1);
+		/* Then we assert reset */
+		gpio_direction_output(24, 0);
 		mdelay(2);
+		/* Finally we deassert reset*/
+		gpio_set_value(24, 1);
+		mdelay(2);
+		gpio_free(24);
 	}
-	*/
+#elif (CONFIG_MACH_TYPE == MACH_TYPE_IGEP0030)
+	/* Turn ON Base0010 USB HUB */
+	if (!gpio_request(23, "usbh_b0010rb_hub_rst")) {
+		gpio_direction_output(23, 1);
+		mdelay(2);
+		gpio_set_value(23, 0);
+		mdelay(2);
+		gpio_free(23);
+	}
+	/* Turn ON USB Transceiver */
+	if (!gpio_request(54, "usbh_nrst")) {
+		gpio_direction_output(54, 0);
+		mdelay(2);
+		gpio_set_value(54, 1);
+		mdelay(2);
+		gpio_free(54);
+	}
+#endif
+
 }
 
 void set_boardname(void)
@@ -528,9 +543,8 @@ int misc_init_r(void)
 	/* printf("board_rev: 0x%x\n", board_rev); */
 
 	/* Enable USB Power*/	
-#if 0	
 	twl4030_set_ledA(1);
-#endif	
+
 	setup_net_chip();
 	reset_usb_host_t();
 	omap_die_id_display();
@@ -595,9 +609,8 @@ int ehci_hcd_init(int index, enum usb_init_type init,
 	/* Turn ON USB Transceiver */
 	if (!gpio_request(24, "usbh_nrst")) {
 		/* First we turn on power */
-#if 0		
 		twl4030_set_ledA(1);
-#endif		
+	
 		mdelay(2);
 		/* Then we assert reset */
 		gpio_direction_output(24, 0);

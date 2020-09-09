@@ -12,4 +12,6 @@ typedef struct led_definition_t
 /* Extern definition */
 extern led_definition *ldef;
 
+void twl4030_set_ledA (int on_off);
+
 #endif

@@ -175,7 +175,7 @@
 	MUX_VAL(CP(I2C2_SDA),       (IEN  | PTU | EN  | M0)) /* I2C2_SDA */\
 	MUX_VAL(CP(I2C3_SCL),       (IEN  | PTU | EN  | M0)) /* I2C3_SCL */\
 	MUX_VAL(CP(I2C3_SDA),       (IEN  | PTU | EN  | M0)) /* I2C3_SDA */\
-	MUX_VAL(CP(ETK_D10_ES2),	(IDIS | PTU | EN  | M4)) /* GPIO_24-USB_HOST_RST*/
+	MUX_VAL(CP(ETK_D10_ES2),	(IDIS | PTD | EN  | M4)) /* GPIO_24-USB_HOST_RST*/
 
 
 #define MUX_IGEP0030() \
